@@ -1,0 +1,27 @@
+---
+import PostCard from "@/components/blog/PostCard.astro";
+
+// Recibe posts desde el padre, o fallback a []
+const { posts = [] } = Astro.props;
+---
+
+<section class="relative py-16 bg-[var(--surface-1)]">
+  <div class="mx-auto max-w-6xl px-6">
+    <h2 class="text-2xl font-semibold text-[var(--color-title)] mb-6">
+      Últimos artículos
+    </h2>
+
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {posts.map((p: any) => <PostCard post={p} />)}
+    </div>
+
+    <div class="text-center mt-8">
+      <a
+        href="/blog/"
+        class="inline-block rounded-md bg-[var(--color-accent)] text-[var(--color-accent-foreground)] px-5 py-2 font-medium hover:bg-[#B786F4] transition"
+      >
+        Ver todos
+      </a>
+    </div>
+  </div>
+</section>

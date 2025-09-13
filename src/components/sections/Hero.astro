@@ -1,0 +1,129 @@
+---
+import Button from "@/components/ui/Button.tsx";
+---
+
+<section
+  class="relative overflow-hidden bg-gradient-to-b from-[var(--color-bg)] to-[#1A1431]"
+>
+  <!-- Spotlight/acento sutil -->
+  <div
+    class="pointer-events-none absolute inset-0 -z-10
+           bg-[radial-gradient(60%_50%_at_20%_10%,rgba(195,151,246,0.25)_0%,transparent_60%)]"
+    aria-hidden="true"
+  >
+  </div>
+
+  <div
+    class="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-6 py-24 md:grid-cols-[1.2fr_0.8fr]"
+  >
+    <!-- Columna izquierda: contenido -->
+    <div class="text-center md:text-left">
+      <!-- Eyebrow/Breadcrumb mini -->
+      <div
+        class="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[var(--color-text)] md:mx-0"
+      >
+        <span class="inline-block h-2 w-2 rounded-full bg-[var(--color-accent)]"
+        ></span>
+        Blog de la comunidad DevTalles
+      </div>
+
+      <!-- Título con gradiente -->
+      <h1
+        class="text-4xl font-extrabold leading-tight text-transparent md:text-5xl
+               bg-gradient-to-r from-[var(--color-title)] to-[var(--color-accent)] bg-clip-text"
+      >
+        Aprende, comparte y crece con DevTalles 🚀
+      </h1>
+
+      <!-- Subtítulo -->
+      <p class="mt-4 text-lg text-[var(--color-text)]/80 md:max-w-2xl">
+        Artículos de <strong>frontend</strong>, <strong>backend</strong>, <strong
+          >arquitectura</strong
+        >, productividad y mejores prácticas. Con ejemplos claros, recursos
+        abiertos y la compañía de <strong>Debi</strong>.
+      </p>
+
+      <!-- Botones (reutilizables) -->
+      <div
+        class="mt-8 flex flex-col items-center gap-3 sm:flex-row md:justify-start"
+      >
+        <Button href="/blog" size="lg">Explorar artículos</Button>
+        <Button
+          href="https://cursos.devtalles.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          variant="outline"
+          size="lg"
+          className="w-full sm:w-auto"
+        >
+          Conocer más
+        </Button>
+      </div>
+
+      <!-- Métricas/Confianza (compacto) -->
+      <div
+        class="mt-6 flex flex-wrap items-center justify-center gap-6 text-xs text-[var(--color-text)]/70 md:justify-start"
+      >
+        <div class="flex items-center gap-2">
+          <!-- icon doc -->
+          <svg
+            viewBox="0 0 24 24"
+            class="h-4 w-4 text-[var(--color-accent)]"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            ><path
+              d="M7 3h6l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"
+            ></path><path d="M13 3v5h5"></path></svg
+          >
+          <span>120+ artículos</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- icon users -->
+          <svg
+            viewBox="0 0 24 24"
+            class="h-4 w-4 text-[var(--color-accent)]"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            ><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle
+              cx="9"
+              cy="7"
+              r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path
+              d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg
+          >
+          <span>30+ autores</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- icon badge -->
+          <svg
+            viewBox="0 0 24 24"
+            class="h-4 w-4 text-[var(--color-accent)]"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            ><path
+              d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+            ></path></svg
+          >
+          <span>Open Source</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna derecha: Debi (ilustración) -->
+    <div class="relative hidden md:block">
+      <div
+        class="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[var(--color-accent)]/20 blur-3xl"
+      >
+      </div>
+      <img
+        src="/assets/svg/DEVI%20HELLO.svg"
+        alt="Debi"
+        class="relative z-10 mx-auto w-72 drop-shadow-xl"
+        loading="eager"
+        decoding="async"
+      />
+    </div>
+  </div>
+</section>

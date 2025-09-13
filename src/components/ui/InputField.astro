@@ -1,0 +1,35 @@
+---
+const {
+  id,
+  name = id,
+  label,
+  type = "text",
+  placeholder = "",
+  required = false,
+  value,
+  autocomplete,
+} = Astro.props;
+---
+
+<div class="space-y-2">
+  {
+    label && (
+      <label
+        for={id}
+        class="block text-sm font-medium text-[var(--color-text)]"
+      >
+        {label}
+      </label>
+    )
+  }
+  <input
+    id={id}
+    name={name}
+    type={type}
+    value={value}
+    placeholder={placeholder}
+    autocomplete={autocomplete}
+    required={required}
+    class="block w-full rounded-lg border border-white/10 bg-[var(--color-bg)] p-3 text-[var(--color-text)] placeholder-white/40 focus:border-[var(--color-accent)] focus:outline-none"
+  />
+</div>

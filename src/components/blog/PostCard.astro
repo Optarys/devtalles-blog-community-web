@@ -1,37 +1,70 @@
 ---
 const { post } = Astro.props;
+const tags = post?.tags ?? [];
 ---
 
 <article
-  class="rounded-xl border border-white/10 bg-[#1A1431] hover:border-white/20 transition flex flex-col"
+  class="group relative overflow-hidden rounded-xl border border-white/10 bg-[#1A1431]/80 backdrop-blur-sm transition hover:border-white/20"
 >
-  <a href={post.href} class="block flex-1">
-    <img
-      src={post.cover}
-      alt={post.title}
-      class="w-full h-40 object-cover rounded-t-xl"
-      loading="lazy"
-    />
+  <a href={post.href} class="block">
+    <!-- Cover -->
+    <div class="relative aspect-[16/9] overflow-hidden">
+      <img
+        src={post.cover}
+        alt={post.title}
+        class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+        loading="lazy"
+      />
+      <span
+        class="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#1A1431]/90 to-transparent"
+      ></span>
+    </div>
 
-    <div class="p-4 flex flex-col gap-2">
+    <!-- Content -->
+    <div class="p-4 space-y-2">
       <h3
         class="text-base font-semibold text-[var(--color-title)] line-clamp-2"
       >
         {post.title}
       </h3>
+
       <p class="text-sm text-[var(--color-text)]/80 line-clamp-3">
         {post.excerpt}
       </p>
-      <p class="text-xs text-[var(--color-text)]/60">{post.date}</p>
 
-      <div class="flex flex-wrap gap-1 mt-1">
-        {
-          post.tags?.map((t: any) => (
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-accent)]/20 text-[var(--color-accent)] font-medium">
-              {t}
-            </span>
-          ))
-        }
+      <div
+        class="mt-2 flex items-center justify-between gap-2 text-xs text-[var(--color-text)]/70"
+      >
+        <!-- Fecha -->
+        <div class="flex items-center gap-1.5">
+          <svg
+            viewBox="0 0 24 24"
+            class="h-4 w-4 text-[var(--color-accent)]"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="4.5" width="18" height="16" rx="2"></rect>
+            <path d="M3 9h18"></path>
+            <path d="M8 3v3"></path>
+            <path d="M16 3v3"></path>
+          </svg>
+          <span class="whitespace-nowrap">{post.date}</span>
+        </div>
+
+        <!-- Tags -->
+        <div class="flex flex-wrap gap-1">
+          {
+            tags.map((t: any) => (
+              <span class="rounded-full bg-[var(--color-accent)]/15 px-2 py-0.5 text-[10px] font-medium text-[var(--color-accent)]">
+                {t}
+              </span>
+            ))
+          }
+        </div>
       </div>
     </div>
   </a>
