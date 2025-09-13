@@ -1,0 +1,39 @@
+---
+import RootLayout from "@/layouts/RootLayout.astro";
+
+import TopNav from "@/components/ui/TopNav.tsx";
+import FooterSimple from "@/components/ui/FooterSimple.tsx";
+const { slug } = Astro.params;
+---
+
+<RootLayout>
+  <TopNav client:load />
+  <main class="mx-auto max-w-3xl px-4 py-8">
+    <nav class="mb-6 text-sm text-[var(--text)]/70">
+      <a href="/">Inicio</a> / <a href="/blog/">Blog</a> / <span
+        class="capitalize">{slug}</span
+      >
+    </nav>
+
+    <h1 class="text-3xl font-semibold text-[var(--title)] mb-2">
+      Título del post
+    </h1>
+    <p class="text-sm text-[var(--text)]/70 mb-6">13/09/2025 · astro, react</p>
+
+    <article class="prose prose-invert">
+      <p>Contenido de ejemplo…</p>
+    </article>
+
+    <!-- placeholders visuales para la siguiente fase -->
+    <div class="mt-10 flex items-center gap-3">
+      <button
+        class="rounded-lg bg-[var(--accent)] text-[var(--contrast)] px-3 py-1"
+        >❤️ Like</button
+      >
+      <button class="rounded-lg border border-white/20 px-3 py-1"
+        >💬 Comentarios</button
+      >
+    </div>
+  </main>
+  <FooterSimple client:load />
+</RootLayout>

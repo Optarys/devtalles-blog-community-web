@@ -1,0 +1,67 @@
+---
+import TopNav from "@/components/ui/TopNav.tsx";
+import FooterSimple from "@/components/ui/FooterSimple.tsx";
+import PostGrid from "@/components/blog/PostGrid.astro";
+import RootLayout from "@/layouts/RootLayout.astro";
+
+// mocks de posts (puedes luego conectarlo a Content Collections)
+const posts = Array.from({ length: 6 }).map((_, i) => ({
+  href: `/blog/post-${i + 1}/`,
+  title: `Post ${i + 1}`,
+  excerpt: "Un pequeño resumen del contenido de este artículo.",
+  cover: "/covers/default.jpg",
+  tags: ["astro", "react"].slice(0, (i % 2) + 1),
+  date: "13/09/2025",
+}));
+---
+
+<RootLayout title="Inicio">
+  <TopNav client:load />
+
+  <!-- HERO -->
+  <section class="mx-auto max-w-6xl px-6 py-20 text-center">
+    <h1
+      class="text-4xl md:text-5xl font-extrabold text-[var(--color-title)] mb-4"
+    >
+      Bienvenido al Blog de la Comunidad 🚀
+    </h1>
+    <p class="text-lg text-[var(--color-text)]/80 max-w-2xl mx-auto mb-6">
+      Artículos sobre desarrollo web, Astro, React y mejores prácticas para
+      crecer como dev.
+    </p>
+    <a
+      href="/blog/"
+      class="inline-block rounded-lg bg-[var(--color-accent)] text-[var(--color-contrast)] px-6 py-3 font-semibold hover:bg-[#B786F4] transition"
+    >
+      Explorar artículos
+    </a>
+  </section>
+
+  <!-- LISTADO DE POSTS -->
+  <section class="mx-auto max-w-6xl px-6 py-12">
+    <h2 class="text-2xl font-semibold text-[var(--color-title)] mb-6">
+      Últimos artículos
+    </h2>
+    <PostGrid posts={posts} />
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section class="mx-auto max-w-6xl px-6 py-20 text-center">
+    <div class="rounded-2xl bg-[var(--color-contrast)]/30 p-10">
+      <h3 class="text-2xl md:text-3xl font-bold text-[var(--color-title)] mb-4">
+        ¿Quieres recibir más contenido?
+      </h3>
+      <p class="text-[var(--color-text)]/80 mb-6">
+        Suscríbete para enterarte de los nuevos artículos y tutoriales.
+      </p>
+      <a
+        href="/about/"
+        class="inline-block rounded-lg bg-[var(--color-accent)] text-[var(--color-contrast)] px-6 py-3 font-semibold hover:bg-[#B786F4] transition"
+      >
+        Conocer más
+      </a>
+    </div>
+  </section>
+
+  <FooterSimple client:load />
+</RootLayout>

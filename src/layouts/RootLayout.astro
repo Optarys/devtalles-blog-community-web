@@ -1,0 +1,22 @@
+---
+import { ThemeModeScript } from "flowbite-react";
+import "@/styles/global.css";
+
+const {
+  title = "DevTalles Blog",
+  description = "Blog con Astro + Flowbite React",
+} = Astro.props;
+---
+
+<html lang="es" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <ThemeModeScript />
+  </head>
+  <body class="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
+    <slot />
+  </body>
+</html>

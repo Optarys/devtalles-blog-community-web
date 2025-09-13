@@ -1,0 +1,9 @@
+---
+// src/components/blog/PostGrid.astro
+import PostCard from "./PostCard.astro";
+const { posts = [] } = Astro.props; // array de posts mock
+---
+
+<section class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  {posts.map((p: any) => <PostCard post={p} />)}
+</section>

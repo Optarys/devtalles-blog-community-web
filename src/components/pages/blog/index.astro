@@ -1,0 +1,25 @@
+---
+import RootLayout from "@/layouts/RootLayout.astro";
+import TopNav from "@/components/ui/TopNav.tsx";
+import Filters from "@/components/ui/Filters.tsx";
+import PostGrid from "@/components/blog/PostGrid.astro";
+import PaginationBar from "@/components/ui/PaginationBar.tsx";
+
+const posts = Array.from({ length: 9 }).map((_, i) => ({
+  href: `/blog/post-${i + 1}/`,
+  title: `Post ${i + 1}`,
+  excerpt: "Descripción corta del post.",
+  cover: "/covers/default.jpg",
+  tags: ["astro", "js"].slice(0, (i % 2) + 1),
+  date: "2025-09-13",
+}));
+---
+
+<RootLayout>
+  <TopNav client:load />
+  <section class="mx-auto max-w-6xl px-4 py-8 space-y-6">
+    <Filters client:load />
+    <PostGrid posts={posts} />
+    <PaginationBar client:load page={1} total={5} />
+  </section>
+</RootLayout>
