@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* Token de tipografía por defecto de Tailwind */
+@theme {
+  --font-sans: "Raleway", ui-sans-serif, system-ui, -apple-system,
+               "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
+               "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+}
+
+/* Aplica la familia a toda la app */
+@layer base {
+  html { font-family: var(--font-sans); }
+}
