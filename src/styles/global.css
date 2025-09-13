@@ -1,13 +1,25 @@
+@import "@fontsource/raleway/400.css";
+@import "@fontsource/raleway/500.css";
+@import "@fontsource/raleway/700.css";
+
 @import "tailwindcss";
 
-/* Token de tipografía por defecto de Tailwind */
 @theme {
   --font-sans: "Raleway", ui-sans-serif, system-ui, -apple-system,
                "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
                "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+
+  --color-bg:       #21183B;
+  --color-accent:   #C397F6;
+  --color-title:    #F3EFFF;
+  --color-text:     #F1F5F9;
+  --color-contrast: #111827;
+  --color-accent-foreground: #111827;
 }
 
-/* Aplica la familia a toda la app */
 @layer base {
   html { font-family: var(--font-sans); }
+  body { background: var(--color-bg); color: var(--color-text); }
+  h1,h2,h3,h4,h5,h6 { color: var(--color-title); }
+  a { color: var(--color-accent); }
 }
