@@ -1,4 +1,5 @@
 import {
+  Button,
   Navbar,
   NavbarBrand,
   NavbarCollapse,
@@ -8,23 +9,25 @@ import {
 
 export default function TopNav() {
   return (
-    <Navbar fluid rounded>
-      <NavbarBrand href="/">
-        <img src="/logo.svg" className="mr-3 h-6 sm:h-9" alt="Logo" />
-        <span className="self-center whitespace-nowrap text-xl font-semibold">
-          DevTalles Blog
-        </span>
-      </NavbarBrand>
+  <Navbar fluid rounded className="bg-[var(--color-bg)]">
+  <NavbarBrand href="/">
+    <img src="/assets/svg/LOGO B.svg" className="mr-3 h-6 sm:h-9" alt="Logo" />
+   
+  </NavbarBrand>
+  <NavbarToggle />
+<NavbarCollapse>
+  <NavbarLink href="/" active className="text-[var(--color-text)]">
+    Inicio
+  </NavbarLink>
+  <NavbarLink href="/blog/" className="text-[var(--color-text)]">
+    Blog
+  </NavbarLink>
+  <NavbarLink href="/about/" className="text-[var(--color-text)]">
+    About
+  </NavbarLink>
+ 
+</NavbarCollapse>
+</Navbar>
 
-      <NavbarToggle />
-
-      <NavbarCollapse>
-        <NavbarLink href="/" active>
-          Inicio
-        </NavbarLink>
-        <NavbarLink href="/blog/">Blog</NavbarLink>
-        <NavbarLink href="/about/">About</NavbarLink>
-      </NavbarCollapse>
-    </Navbar>
   );
 }
