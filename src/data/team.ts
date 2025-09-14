@@ -25,7 +25,7 @@ export const TEAM: TeamMember[] = [
     {
         name: "Kevin Ortiz",
         role: "Backend",
-        avatar: "/assets/avatars/joseph.jpg",
+        avatar: "/assets/avatars/kevin.jpg",
         bio: "APIs, autenticación y pipeline de publicación.",
         links: [{ label: "GitHub", href: "https://github.com/..." }],
     },
