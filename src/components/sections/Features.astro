@@ -2,7 +2,7 @@
 
 ---
 
-<section class="mx-auto max-w-6xl px-6 py-16">
+<section class="section mx-auto max-w-6xl px-6 bg-[var(--surface-0)]">
   <h2
     class="mb-10 text-center text-2xl font-semibold text-[var(--color-title)]"
   >
@@ -10,12 +10,13 @@
   </h2>
 
   <div class="grid gap-6 md:grid-cols-3">
-    <!-- Tutoriales -->
+    <!-- Card -->
     <div
-      class="rounded-xl border border-white/10 bg-[var(--color-contrast)]/15 p-6 text-center transition hover:border-white/20"
+      class="group rounded-xl border border-white/10 bg-[var(--surface-2)]/80 p-6 text-center
+             transition hover:border-white/20 hover:shadow-xl hover:shadow-[var(--surface-ring)]/50"
     >
       <div
-        class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-accent)]/15 text-[var(--color-accent)]"
+        class="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--color-accent)]/15 text-[var(--color-accent)]"
       >
         <!-- Libro -->
         <svg
@@ -26,7 +27,6 @@
           stroke-width="1.8"
           stroke-linecap="round"
           stroke-linejoin="round"
-          aria-hidden="true"
         >
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
           <path d="M20 22V6a2 2 0 0 0-2-2H6.5A2.5 2.5 0 0 0 4 6.5v13"></path>
@@ -40,14 +40,14 @@
       </p>
     </div>
 
-    <!-- Recursos -->
     <div
-      class="rounded-xl border border-white/10 bg-[var(--color-contrast)]/15 p-6 text-center transition hover:border-white/20"
+      class="group rounded-xl border border-white/10 bg-[var(--surface-2)]/80 p-6 text-center
+             transition hover:border-white/20 hover:shadow-xl hover:shadow-[var(--surface-ring)]/50"
     >
       <div
-        class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-accent)]/15 text-[var(--color-accent)]"
+        class="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--color-accent)]/15 text-[var(--color-accent)]"
       >
-        <!-- Código / bloques -->
+        <!-- Código -->
         <svg
           viewBox="0 0 24 24"
           class="h-6 w-6"
@@ -56,10 +56,8 @@
           stroke-width="1.8"
           stroke-linecap="round"
           stroke-linejoin="round"
-          aria-hidden="true"
         >
-          <path d="M16 18l6-6-6-6"></path>
-          <path d="M8 6l-6 6 6 6"></path>
+          <path d="M16 18l6-6-6-6"></path><path d="M8 6l-6 6 6 6"></path>
         </svg>
       </div>
       <h3 class="mt-4 mb-2 font-semibold text-[var(--color-title)]">
@@ -70,12 +68,12 @@
       </p>
     </div>
 
-    <!-- Comunidad -->
     <div
-      class="rounded-xl border border-white/10 bg-[var(--color-contrast)]/15 p-6 text-center transition hover:border-white/20"
+      class="group rounded-xl border border-white/10 bg-[var(--surface-2)]/80 p-6 text-center
+             transition hover:border-white/20 hover:shadow-xl hover:shadow-[var(--surface-ring)]/50"
     >
       <div
-        class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-accent)]/15 text-[var(--color-accent)]"
+        class="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--color-accent)]/15 text-[var(--color-accent)]"
       >
         <!-- Usuarios -->
         <svg
@@ -86,7 +84,6 @@
           stroke-width="1.8"
           stroke-linecap="round"
           stroke-linejoin="round"
-          aria-hidden="true"
         >
           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
           <circle cx="9" cy="7" r="4"></circle>

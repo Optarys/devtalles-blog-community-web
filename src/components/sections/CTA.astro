@@ -1,20 +1,62 @@
 ---
-
+import Button from "@/components/ui/Button.tsx";
+import InputField from "@/components/ui/InputField.astro";
 ---
 
-<section class="mx-auto max-w-4xl px-6 py-20 text-center">
-  <div class="rounded-2xl bg-[var(--color-contrast)]/30 p-10">
-    <h3 class="text-2xl md:text-3xl font-bold text-[var(--color-title)] mb-4">
-      ¿Quieres recibir más contenido?
-    </h3>
-    <p class="text-[var(--color-text)]/80 mb-6">
-      Suscríbete y no te pierdas las novedades de la comunidad.
-    </p>
-    <a
-      href="/subscribe/"
-      class="inline-block rounded-lg bg-[var(--color-accent)] text-[var(--color-contrast)] px-6 py-3 font-semibold hover:bg-[#B786F4] transition"
+<section class="section mx-auto max-w-5xl px-6">
+  <div
+    class="relative overflow-hidden rounded-2xl border border-white/10
+           bg-[var(--surface-2)]/75 p-8 md:p-10 backdrop-blur section-divider"
+  >
+    <!-- Glow + patrón -->
+    <div
+      class="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[var(--color-accent)]/20 blur-3xl"
     >
-      Suscribirme
-    </a>
+    </div>
+    <div class="absolute inset-0 -z-10 bg-grid"></div>
+
+    <div class="grid items-center gap-8 md:grid-cols-[1.1fr_0.9fr]">
+      <div>
+        <h3
+          class="text-2xl md:text-3xl font-bold text-[var(--color-title)] mb-3"
+        >
+          ¿Quieres recibir más contenido?
+        </h3>
+        <p class="text-[var(--color-text)]/80">
+          Suscríbete y no te pierdas las novedades de la comunidad. Te
+          enviaremos artículos, recursos y noticias (sin spam).
+        </p>
+
+        <form class="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]">
+          <InputField
+            id="email-sub"
+            name="email"
+            type="email"
+            placeholder="tu@email.com"
+            autocomplete="email"
+            required
+          />
+          <Button type="submit" className="w-full sm:w-auto">Suscribirme</Button
+          >
+        </form>
+
+        <p class="mt-3 text-xs text-[var(--color-text)]/60">
+          Al suscribirte aceptas nuestra <a href="/privacy" class="underline"
+            >política de privacidad</a
+          >.
+        </p>
+      </div>
+
+      <!-- Debi decorativo -->
+      <div class="hidden md:block">
+        <img
+          src="/assets/svg/DEVI%20NORMAL%20BORDER.svg"
+          alt="Debi"
+          class="mx-auto w-44 drop-shadow-xl"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </div>
   </div>
 </section>

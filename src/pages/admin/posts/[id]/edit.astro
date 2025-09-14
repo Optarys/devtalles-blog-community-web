@@ -1,0 +1,9 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import PostForm from "@/components/admin/PostForm.tsx";
+const { id } = Astro.params;
+---
+
+<AdminLayout title="Editar publicación">
+  <PostForm client:load mode="edit" postId={id} />
+</AdminLayout>

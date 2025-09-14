@@ -1,0 +1,134 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import Button from "@/components/ui/Button.tsx";
+
+// React islands
+import AdminStats from "@/components/admin/AdminStats.tsx";
+import RecentPosts from "@/components/admin/RecentPosts.tsx";
+---
+
+<AdminLayout title="Panel Admin">
+  <!-- Hero / Bienvenida -->
+  <section
+    class="relative overflow-hidden rounded-2xl border border-white/10
+           bg-gradient-to-r from-[var(--surface-1)] to-[var(--surface-2)]
+           p-6 md:p-8"
+  >
+    <!-- Glow/acento -->
+    <div
+      class="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-[var(--color-accent)]/20 blur-3xl"
+    >
+    </div>
+
+    <div
+      class="grid grid-cols-1 gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-center"
+    >
+      <!-- Texto -->
+      <div>
+        <span
+          class="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[var(--color-text)]"
+        >
+          <span
+            class="inline-block h-2 w-2 rounded-full bg-[var(--color-accent)]"
+          ></span>
+          Panel de administración
+        </span>
+
+        <h1
+          class="text-2xl font-semibold text-[var(--color-title)] md:text-3xl"
+        >
+          ¡Hola! Gestiona el contenido del blog de la comunidad DevTalles
+        </h1>
+        <p class="mt-2 text-[var(--color-text)]/75">
+          Crea, edita y publica artículos. Este panel está conectado a datos
+          locales por ahora (demo).
+        </p>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+          <Button href="/admin/posts/new">Crear publicación</Button>
+          <Button href="/admin/posts" variant="outline"
+            >Ver publicaciones</Button
+          >
+          <Button href="/" variant="ghost">Ir al sitio</Button>
+        </div>
+      </div>
+
+      <!-- Debi -->
+      <div class="relative hidden md:block">
+        <img
+          src="/assets/svg/DEVI%20HELLO.svg"
+          alt="Debi"
+          class="relative z-10 mx-auto w-56 drop-shadow-xl"
+          loading="eager"
+          decoding="async"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- Métricas -->
+  <section class="mt-8">
+    <AdminStats client:load />
+  </section>
+
+  <!-- Últimos artículos + accesos rápidos -->
+  <section class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+    <div
+      class="rounded-2xl border border-white/10 bg-[var(--surface-2)]/70 p-4 backdrop-blur"
+    >
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-[var(--color-title)]">
+          Últimos artículos
+        </h2>
+        <Button href="/admin/posts" variant="outline" size="sm">Ver todo</Button
+        >
+      </div>
+      <RecentPosts client:load />
+    </div>
+
+    <div
+      class="rounded-2xl border border-white/10 bg-[var(--surface-2)]/70 p-4 backdrop-blur"
+    >
+      <h3 class="mb-3 text-base font-semibold text-[var(--color-title)]">
+        Accesos rápidos
+      </h3>
+      <ul class="space-y-2 text-sm">
+        <li>
+          <a
+            class="group flex items-center justify-between rounded-lg border border-white/10 p-3 hover:border-white/20"
+            href="/admin/posts/new"
+          >
+            <span>Nuevo artículo</span>
+            <span class="text-[var(--color-accent)] group-hover:underline"
+              >Abrir</span
+            >
+          </a>
+        </li>
+        <li>
+          <a
+            class="group flex items-center justify-between rounded-lg border border-white/10 p-3 hover:border-white/20"
+            href="/admin/posts"
+          >
+            <span>Gestionar publicaciones</span>
+            <span class="text-[var(--color-accent)] group-hover:underline"
+              >Abrir</span
+            >
+          </a>
+        </li>
+        <li>
+          <a
+            class="group flex items-center justify-between rounded-lg border border-white/10 p-3 hover:border-white/20"
+            href="https://cursos.devtalles.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span>Ver sitio de DevTalles</span>
+            <span class="text-[var(--color-accent)] group-hover:underline"
+              >Abrir</span
+            >
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+</AdminLayout>

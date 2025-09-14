@@ -1,11 +1,12 @@
 ---
 import PostCard from "@/components/blog/PostCard.astro";
-
-// Recibe posts desde el padre, o fallback a []
 const { posts = [] } = Astro.props;
 ---
 
-<section class="relative py-16 bg-[var(--surface-1)]">
+<section class="section relative bg-[var(--surface-1)]">
+  <!-- sutil pattern para que no sea un bloque plano -->
+  <div class="absolute inset-0 -z-10 bg-grid"></div>
+
   <div class="mx-auto max-w-6xl px-6">
     <h2 class="text-2xl font-semibold text-[var(--color-title)] mb-6">
       Últimos artículos

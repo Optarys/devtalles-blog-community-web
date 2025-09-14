@@ -1,0 +1,8 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import PostTable from "@/components/admin/PostTable.tsx";
+---
+
+<AdminLayout title="Publicaciones">
+  <PostTable client:load />
+</AdminLayout>

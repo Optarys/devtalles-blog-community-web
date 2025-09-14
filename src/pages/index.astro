@@ -10,7 +10,10 @@ import Features from "@/components/sections/Features.astro";
 import Mascot from "@/components/sections/Mascot.astro";
 import CTA from "@/components/sections/CTA.astro";
 
-// Mock de posts (temporal, luego vendrá de Content Collections o CMS)
+// Divisor suave (opción A)
+import SectionDivider from "@/components/ui/SectionDivider.astro";
+
+// Mock temporal
 const posts = Array.from({ length: 6 }).map((_, i) => ({
   href: `/blog/post-${i + 1}/`,
   title: `Post ${i + 1}`,
@@ -25,9 +28,13 @@ const posts = Array.from({ length: 6 }).map((_, i) => ({
   <TopNav client:load />
 
   <Hero />
+
   <PostList posts={posts} />
-  <!-- 👈 aquí se pasan los posts -->
+
+  <SectionDivider />
+
   <Features />
+
   <Mascot />
   <CTA />
 

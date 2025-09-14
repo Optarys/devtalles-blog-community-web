@@ -7,21 +7,84 @@
 @source "../../.flowbite-react/class-list.json";
 
 @theme {
-  --font-sans: "Raleway", ui-sans-serif, system-ui, -apple-system,
-               "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
-               "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+  --font-sans: "Raleway", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol";
 
-  --color-bg:       #21183B;
-  --color-accent:   #C397F6;
-  --color-title:    #F3EFFF;
-  --color-text:     #F1F5F9;
+  --color-bg: #21183b;
+  --color-accent: #c397f6;
+  --color-title: #f3efff;
+  --color-text: #f1f5f9;
   --color-contrast: #111827;
   --color-accent-foreground: #111827;
 }
 
 @layer base {
-  html { font-family: var(--font-sans); }
-  body { background: var(--color-bg); color: var(--color-text); }
-  h1,h2,h3,h4,h5,h6 { color: var(--color-title); }
-  a { color: var(--color-accent); }
+  html {
+    font-family: var(--font-sans);
+  }
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--color-title);
+  }
+  a {
+    color: var(--color-accent);
+  }
+}
+
+:root {
+  --color-bg: #21183b;
+  --color-accent: #c397f6;
+  --color-title: #f3efff;
+  --color-text: #f1f5f9;
+  --color-contrast: #111827;
+  --color-accent-foreground: #111827;
+
+  /* Superficies para admin/dashboard */
+  --surface-0: var(--color-bg);
+  --surface-1: #1a1431;
+  --surface-2: #2a2145;
+}
+
+/* Patrón de cuadrícula sutil (usa tu paleta) */
+.bg-grid {
+  background-image: linear-gradient(
+      to right,
+      var(--pattern-line) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, var(--pattern-line) 1px, transparent 1px);
+  background-size: 14px 24px;
+}
+
+/* Separadores suaves entre secciones (glow) */
+.section-divider {
+  position: relative;
+  isolation: isolate;
+}
+.section-divider::before {
+  content: "";
+  position: absolute;
+  inset: -52px 0 auto;
+  height: 100px;
+  background: radial-gradient(
+    60% 50% at 50% 0,
+    var(--surface-ring),
+    transparent 70%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Tamaños y respiración consistentes */
+.section {
+  padding-block: clamp(3rem, 6vw, 6rem);
 }

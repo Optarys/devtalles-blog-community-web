@@ -1,0 +1,34 @@
+---
+import "@/styles/global.css";
+const { title = "Admin" } = Astro.props;
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>{title} · DevTalles</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body class="min-h-screen bg-[var(--surface-0)] text-[var(--color-text)]">
+    <!-- Topbar simple -->
+    <header
+      class="sticky top-0 z-20 border-b border-white/10 bg-[var(--surface-0)]/90 backdrop-blur"
+    >
+      <div
+        class="mx-auto flex max-w-6xl items-center justify-between px-6 py-3"
+      >
+        <a href="/admin/posts" class="font-bold text-[var(--color-title)]">
+          DevTalles · Admin
+        </a>
+        <nav class="text-sm">
+          <a href="/" class="hover:underline">← Ir al sitio</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Contenido -->
+    <main class="mx-auto max-w-6xl px-6 py-8">
+      <slot />
+    </main>
+  </body>
+</html>

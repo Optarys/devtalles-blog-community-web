@@ -10,27 +10,27 @@ import { FaDiscord } from "react-icons/fa";
 
 export default function TopNav() {
   return (
-    <Navbar fluid rounded className="bg-[var(--color-bg)]">
-      {/* LOGO */}
+    <Navbar
+      fluid
+      rounded
+      className="
+        sticky top-0 z-50
+        border-b border-white/10
+        bg-[var(--color-bg)]/80 backdrop-blur
+        supports-[backdrop-filter]:bg-[var(--color-bg)]/60
+      "
+    >
       <NavbarBrand href="/">
         <img src="/assets/svg/LOGO B.svg" className="mr-3 h-6 sm:h-9" alt="Logo" />
       </NavbarBrand>
 
-      {/* MENÚ */}
       <NavbarToggle />
       <NavbarCollapse>
-        <NavbarLink href="/" active className="text-[var(--color-text)]">
-          Inicio
-        </NavbarLink>
-        <NavbarLink href="/blog/" className="text-[var(--color-text)]">
-          Blog
-        </NavbarLink>
-        <NavbarLink href="/about/" className="text-[var(--color-text)]">
-          About
-        </NavbarLink>
+        <NavbarLink href="/" active className="text-[var(--color-text)]">Inicio</NavbarLink>
+        <NavbarLink href="/blog/" className="text-[var(--color-text)]">Blog</NavbarLink>
+        <NavbarLink href="/about/" className="text-[var(--color-text)]">About</NavbarLink>
       </NavbarCollapse>
 
-      {/* BOTÓN LOGIN */}
       <Button
         color="purple"
         size="sm"
