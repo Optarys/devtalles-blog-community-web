@@ -10,23 +10,23 @@ export type TeamMember = {
 export const TEAM: TeamMember[] = [
     {
         name: "Johanssen Roque",
-        role: "Full-stack / Coordinación",
+        role: "Líder Frontend / Coordinación General",
         avatar: "/assets/avatars/johanssen.png",
-        bio: "Enlace entre front, back y despliegues. Foco en calidad y performance.",
+        bio: "Responsable de la arquitectura de la interfaz, la integración del diseño con la lógica de la aplicación y la coordinación general del proyecto.",
         links: [{ label: "GitHub", href: "https://github.com/johs7" }],
     },
     {
         name: "Joseph Pineda",
-        role: "Frontend",
+        role: "Líder Frontend / Experiencia de Usuario",
         avatar: "/assets/avatars/joseph.jpg",
-        bio: "Componentes UI, accesibilidad y experiencia de lectura.",
+        bio: "Encargado de los componentes UI, accesibilidad y optimización de la experiencia de lectura en el blog.",
         links: [{ label: "GitHub", href: "https://github.com/Joris2206" }],
     },
     {
         name: "Kevin Ortiz",
-        role: "Backend",
+        role: "Líder Backend / Infraestructura y APIs",
         avatar: "/assets/avatars/kevin.jpg",
-        bio: "APIs, autenticación y pipeline de publicación.",
+        bio: "Encargado del diseño de APIs, la autenticación y la gestión de la infraestructura necesaria para el despliegue del proyecto.",
         links: [{ label: "GitHub", href: "https://github.com/..." }],
     },
 ];
