@@ -51,7 +51,6 @@ export default function TopNav({ currentPath }: Props) {
         className="ml-4 flex items-center gap-2"
         onClick={() => (window.location.href = "/auth/login")}
       >
-        <FaDiscord className="text-lg" />
         Login
       </Button>
     </Navbar>

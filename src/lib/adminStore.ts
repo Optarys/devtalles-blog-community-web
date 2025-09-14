@@ -1,4 +1,4 @@
-export type Post = {
+export type LocalPost = {
     id: string;
     title: string;
     slug: string;
@@ -12,27 +12,27 @@ export type Post = {
 
 const KEY = "devtalles_posts";
 
-function safeRead(): Post[] {
+function safeRead(): LocalPost[] {
     if (typeof window === "undefined") return [];
     try {
         const raw = localStorage.getItem(KEY);
-        return raw ? (JSON.parse(raw) as Post[]) : [];
+        return raw ? (JSON.parse(raw) as LocalPost[]) : [];
     } catch {
         return [];
     }
 }
-function safeWrite(posts: Post[]) {
+function safeWrite(posts: LocalPost[]) {
     if (typeof window === "undefined") return;
     localStorage.setItem(KEY, JSON.stringify(posts));
 }
 
-export function getAllPosts(): Post[] {
+export function getAllPosts(): LocalPost[] {
     return safeRead().sort((a, b) => (a.date < b.date ? 1 : -1));
 }
-export function getPost(id: string): Post | undefined {
+export function getPost(id: string): LocalPost | undefined {
     return safeRead().find((p) => p.id === id);
 }
-export function upsertPost(post: Post) {
+export function upsertPost(post: LocalPost) {
     const list = safeRead();
     const i = list.findIndex((p) => p.id === post.id);
     if (i >= 0) list[i] = post;
