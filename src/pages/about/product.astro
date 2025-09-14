@@ -1,0 +1,60 @@
+---
+import AboutLayout from "@/layouts/AboutLayout.astro";
+---
+
+<AboutLayout
+  title="El producto — Proyecto del equipo"
+  description="Qué ofrece la web, cómo está organizada y para quién."
+  sectionTitle="El producto"
+  sectionDescription="Una web de artículos técnicos simple, rápida y clara"
+>
+  <div class="space-y-8 text-[var(--color-text)]/85">
+    <section class="grid gap-4 md:grid-cols-2">
+      <div class="rounded-xl border border-white/10 p-4">
+        <h3 class="font-semibold text-[var(--color-title)]">Para quién es</h3>
+        <p class="text-sm">
+          Desarrolladores que buscan artículos claros y referencias prácticas.
+        </p>
+      </div>
+      <div class="rounded-xl border border-white/10 p-4">
+        <h3 class="font-semibold text-[var(--color-title)]">Cómo se usa</h3>
+        <p class="text-sm">
+          Explora el <a
+            href="/blog/"
+            class="text-[var(--color-accent)] underline">blog</a
+          >, filtra por etiquetas y lee el detalle con tiempos de lectura y
+          navegación prev/next.
+        </p>
+      </div>
+    </section>
+
+    <section class="grid gap-4 md:grid-cols-3">
+      <div class="rounded-xl border border-white/10 p-4">
+        <h4 class="font-semibold text-[var(--color-title)]">Lectura cómoda</h4>
+        <p class="text-sm">
+          Tipografía y contraste pensados para sesiones largas. Imágenes
+          optimizadas.
+        </p>
+      </div>
+      <div class="rounded-xl border border-white/10 p-4">
+        <h4 class="font-semibold text-[var(--color-title)]">SEO técnico</h4>
+        <p class="text-sm">
+          OG/Twitter, JSON-LD, sitemap y RSS listos para indexación.
+        </p>
+      </div>
+      <div class="rounded-xl border border-white/10 p-4">
+        <h4 class="font-semibold text-[var(--color-title)]">Interacción</h4>
+        <p class="text-sm">Reacciones y comentarios con moderación básica.</p>
+      </div>
+    </section>
+
+    <section class="rounded-xl border border-white/10 p-4">
+      <h3 class="font-semibold text-[var(--color-title)]">Tecnología</h3>
+      <ul class="list-disc pl-6 space-y-1 text-sm">
+        <li>Astro + islas React (UX sin sobrecargar JS).</li>
+        <li>Tailwind + componentes propios alineados al diseño.</li>
+        <li>Content collections tipadas para posts.</li>
+      </ul>
+    </section>
+  </div>
+</AboutLayout>

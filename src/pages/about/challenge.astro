@@ -1,0 +1,38 @@
+---
+import AboutLayout from "@/layouts/AboutLayout.astro";
+---
+
+<AboutLayout
+  title="El desafío — Proyecto del equipo"
+  description="Contexto del reto y objetivos cumplidos por el equipo."
+  sectionTitle="El desafío"
+  sectionDescription="Qué nos propusimos y cómo lo resolvimos"
+>
+  <div class="space-y-6 text-[var(--color-text)]/85">
+    <p>
+      Participamos en un reto para construir un blog técnico con foco en
+      rendimiento, SEO y experiencia de lectura. Entregamos Home, Blog (listado
+      y detalle), About y un flujo de publicación básico.
+    </p>
+
+    <div class="grid gap-4 md:grid-cols-2">
+      <div class="rounded-xl border border-white/10 p-4">
+        <h3 class="font-semibold text-[var(--color-title)]">Objetivos clave</h3>
+        <ul class="list-disc pl-6 space-y-1 text-sm">
+          <li>Performance y SEO técnico completos.</li>
+          <li>Contenido tipado y navegación clara.</li>
+          <li>UI consistente y accesible.</li>
+        </ul>
+      </div>
+
+      <div class="rounded-xl border border-white/10 p-4">
+        <h3 class="font-semibold text-[var(--color-title)]">Resultado</h3>
+        <ul class="list-disc pl-6 space-y-1 text-sm">
+          <li>Sitio listo para uso editorial básico.</li>
+          <li>Arquitectura simple de mantener y escalar.</li>
+          <li>Entrega alineada al espíritu del reto.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</AboutLayout>

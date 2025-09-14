@@ -1,0 +1,110 @@
+---
+import RootLayout from "@/layouts/RootLayout.astro";
+import TopNav from "@/components/ui/TopNav.tsx";
+import FooterSimple from "@/components/ui/FooterSimple.tsx";
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonical?: string;
+  sectionTitle?: string;
+  sectionDescription?: string;
+}
+
+const {
+  title = "About — Proyecto del equipo",
+  description = "Conoce al equipo, el producto y el contexto del reto.",
+  canonical,
+  sectionTitle = "About",
+  sectionDescription = "Quiénes somos y qué construimos",
+} = Astro.props;
+
+const site = Astro.site?.toString().replace(/\/$/, "") ?? "";
+const pathname = Astro.url.pathname;
+
+const navItems = [
+  { href: "/about/", label: "Resumen" },
+  { href: "/about/team/", label: "Equipo" },
+  { href: "/about/product/", label: "El producto" },
+  { href: "/about/challenge/", label: "El desafío" },
+];
+
+function isActive(href: string) {
+  return pathname === href || (href !== "/about/" && pathname.startsWith(href));
+}
+
+const computedCanonical = canonical || (site ? `${site}${pathname}` : "");
+---
+
+<RootLayout
+  title={title}
+  description={description}
+  canonical={computedCanonical}
+>
+  <TopNav client:load />
+
+  <header
+    class="section relative bg-gradient-to-b from-[var(--surface-0)] to-[var(--surface-1)]"
+  >
+    <div class="absolute inset-0 -z-10 bg-grid"></div>
+    <div class="mx-auto max-w-5xl px-6">
+      <div
+        class="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[var(--color-text)] md:mx-0"
+      >
+        <span class="relative inline-flex h-2 w-2" aria-hidden="true">
+          <span
+            class="absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent)] opacity-75 motion-safe:animate-[ping_1.6s_ease-in-out_infinite]"
+          ></span>
+          <span
+            class="relative inline-flex h-2 w-2 rounded-full bg-[var(--color-accent)]"
+          ></span>
+        </span>
+        Sección About
+      </div>
+
+      <h1 class="text-3xl md:text-4xl font-extrabold text-[var(--color-title)]">
+        {sectionTitle}
+      </h1>
+      <p class="mt-2 text-[var(--color-text)]/75">{sectionDescription}</p>
+    </div>
+  </header>
+
+  <main
+    class="mx-auto max-w-5xl px-6 py-8 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-8"
+  >
+    <aside class="md:sticky md:top-6 h-max">
+      <nav class="space-y-1">
+        {
+          navItems.map((item) => (
+            <a
+              href={item.href}
+              class={
+                "flex items-center gap-2 rounded-lg px-3 py-2 transition border " +
+                (isActive(item.href)
+                  ? "border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10 text-[var(--color-title)]"
+                  : "border-white/10 hover:bg-white/5 text-[var(--color-text)]")
+              }
+              aria-current={isActive(item.href) ? "page" : undefined}
+            >
+              <span
+                class={
+                  "inline-block h-1.5 w-1.5 rounded-full " +
+                  (isActive(item.href)
+                    ? "bg-[var(--color-accent)]"
+                    : "bg-white/20")
+                }
+              />
+              {item.label}
+            </a>
+          ))
+        }
+      </nav>
+    </aside>
+
+    <section class="min-h-[40vh]">
+      <slot />
+    </section>
+  </main>
+
+  <FooterSimple client:load />
+</RootLayout>
