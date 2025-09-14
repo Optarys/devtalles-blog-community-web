@@ -32,22 +32,56 @@ const { Content } = await entry.render();
 const data = entry.data;
 
 const title = data.title ?? entry.slug;
-const date = data.date ? formatDate(data.date) : "";
+const dateObj = data.date ? new Date(data.date as any) : undefined;
+const date = dateObj ? formatDate(dateObj) : "";
 const tags = (Array.isArray(data.tags) ? data.tags : []) as string[];
 const cover = data.cover ?? "/assets/png/DEVI NORMAL.png";
 
+// Orden para prev/next
 all.sort((a, b) => {
-  const da = a.data.date ? new Date(a.data.date).getTime() : 0;
-  const db = b.data.date ? new Date(b.data.date).getTime() : 0;
+  const da = a.data.date ? new Date(a.data.date as any).getTime() : 0;
+  const db = b.data.date ? new Date(b.data.date as any).getTime() : 0;
   return db - da;
 });
-
 const idx = all.findIndex((p) => p.slug === entry.slug);
 const prev = idx < all.length - 1 ? all[idx + 1] : null;
 const next = idx > 0 ? all[idx - 1] : null;
+
+// Canonical absoluto si hay site
+const site = Astro.site?.toString().replace(/\/$/, "") ?? "";
+const canonical = site ? `${site}/blog/${entry.slug}/` : `/blog/${entry.slug}/`;
+
+// OG image absoluta si hay site
+const ogImage = site
+  ? (cover.startsWith("http") ? cover : `${site}${cover}`)
+  : cover;
+
+// JSON-LD Article
+const articleJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": title,
+  "image": [ogImage],
+  ...(dateObj ? { "datePublished": dateObj.toISOString(), "dateModified": dateObj.toISOString() } : {}),
+  "author": { "@type": "Organization", "name": "DevTalles Blog" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": canonical }
+};
 ---
 
-<RootLayout title={title} description={data.excerpt ?? ""}>
+<!-- Pasas props SEO al layout aquí -->
+<RootLayout title={title} description={data.excerpt ?? ""} image={ogImage} canonical={canonical}>
+  <!-- Inyección extra al <head> del layout -->
+  <fragment slot="head">
+    <!-- Marca este post como "article" en OG -->
+    <meta property="og:type" content="article" />
+    {dateObj && <meta property="article:published_time" content={dateObj.toISOString()} />}
+    {tags.length > 0 && tags.map((t) => <meta property="article:tag" content={t} />)}
+    <!-- JSON-LD Article -->
+    <script type="application/ld+json">{JSON.stringify(articleJsonLd)}</script>
+    <!-- RSS link (opcional, útil para descubrimiento) -->
+    <link rel="alternate" type="application/rss+xml" title="DevTalles Blog RSS" href="/rss.xml" />
+  </fragment>
+
   <TopNav client:load />
 
   <header class="section relative bg-gradient-to-b from-[var(--surface-0)] to-[var(--surface-1)]">
@@ -58,17 +92,15 @@ const next = idx > 0 ? all[idx - 1] : null;
 
       <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-[var(--color-text)]/70">
         {date && <span>{date}</span>}
-        {
-          tags.length > 0 && (
-            <div class="flex flex-wrap gap-2">
-              {tags.map((t: string) => (
-                <span class="rounded-full bg-[var(--color-accent)]/18 px-3 py-1 text-[10px] font-medium text-[var(--color-accent)]">
-                  {t}
-                </span>
-              ))}
-            </div>
-          )
-        }
+        {tags.length > 0 && (
+          <div class="flex flex-wrap gap-2">
+            {tags.map((t: string) => (
+              <span class="rounded-full bg-[var(--color-accent)]/18 px-3 py-1 text-[10px] font-medium text-[var(--color-accent)]">
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   </header>
@@ -99,28 +131,26 @@ const next = idx > 0 ? all[idx - 1] : null;
       <Comments client:visible slug={entry.slug} />
     </div>
 
-    {
-      (prev || next) && (
-        <nav class="mt-12 grid grid-cols-2 gap-4">
-          <div>
-            {prev && (
-              <a href={`/blog/${prev.slug}/`} class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition">
-                <span class="text-xs text-[var(--color-text)]/60">← Anterior</span>
-                <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">{prev.data.title}</div>
-              </a>
-            )}
-          </div>
-          <div class="text-right">
-            {next && (
-              <a href={`/blog/${next.slug}/`} class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition">
-                <span class="text-xs text-[var(--color-text)]/60">Siguiente →</span>
-                <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">{next.data.title}</div>
-              </a>
-            )}
-          </div>
-        </nav>
-      )
-    }
+    {(prev || next) && (
+      <nav class="mt-12 grid grid-cols-2 gap-4">
+        <div>
+          {prev && (
+            <a href={`/blog/${prev.slug}/`} class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition">
+              <span class="text-xs text-[var(--color-text)]/60">← Anterior</span>
+              <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">{prev.data.title}</div>
+            </a>
+          )}
+        </div>
+        <div class="text-right">
+          {next && (
+            <a href={`/blog/${next.slug}/`} class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition">
+              <span class="text-xs text-[var(--color-text)]/60">Siguiente →</span>
+              <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">{next.data.title}</div>
+            </a>
+          )}
+        </div>
+      </nav>
+    )}
   </article>
 
   <FooterSimple client:load />

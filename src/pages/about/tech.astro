@@ -1,0 +1,48 @@
+---
+import AboutLayout from "@/layouts/AboutLayout.astro";
+
+const title = "Tecnología — DevTalles Community";
+const description = "Stack, arquitectura y decisiones técnicas del proyecto.";
+---
+
+<AboutLayout
+  title={title}
+  description={description}
+  sectionTitle="Tecnología"
+  sectionDescription="Stack, arquitectura y criterios de calidad"
+>
+  <div class="space-y-6">
+    <div class="grid gap-4 md:grid-cols-2">
+      <div class="rounded-xl border border-white/10 p-4">
+        <h3 class="font-semibold text-[var(--color-title)]">Frontend</h3>
+        <ul class="list-disc pl-6 space-y-1 text-[var(--color-text)]/85">
+          <li>Astro + islas React</li>
+          <li>TailwindCSS + diseño minimal</li>
+          <li>Content collections (Markdown tipado)</li>
+          <li>SEO técnico (OG, JSON-LD, RSS, sitemap)</li>
+        </ul>
+      </div>
+      <div class="rounded-xl border border-white/10 p-4">
+        <h3 class="font-semibold text-[var(--color-title)]">
+          Backend (si aplica)
+        </h3>
+        <ul class="list-disc pl-6 space-y-1 text-[var(--color-text)]/85">
+          <li>NestJS modular, OAuth2, CQRS</li>
+          <li>Storage de imágenes con variantes (LQIP)</li>
+          <li>RBAC y auditoría para autores</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-white/10 p-4">
+      <h3 class="font-semibold text-[var(--color-title)]">
+        Criterios de calidad
+      </h3>
+      <ul class="list-disc pl-6 space-y-1 text-[var(--color-text)]/85">
+        <li>Accesibilidad (contraste, focus, alt)</li>
+        <li>Performance (imágenes responsive, islas mínimas)</li>
+        <li>CI/CD con typecheck/lint/build</li>
+      </ul>
+    </div>
+  </div>
+</AboutLayout>

@@ -1,16 +1,19 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
+import { defineConfig } from "astro/config";
 
-import react from '@astrojs/react';
-
-import tailwindcss from '@tailwindcss/vite';
+import react from "@astrojs/react";
+import tailwindcss from "@tailwindcss/vite";
 import flowbiteReact from "flowbite-react/plugin/astro";
+import sitemap from "@astrojs/sitemap";
 
-// https://astro.build/config
 export default defineConfig({
-  integrations: [react(), flowbiteReact()],
-
+  site: "https://devtalles.community", 
+  integrations: [
+    react(),
+    flowbiteReact(),
+    sitemap(),
+  ],
   vite: {
-    plugins: [tailwindcss()]
-  }
+    plugins: [tailwindcss()],
+  },
 });
