@@ -6,9 +6,23 @@ import {
   NavbarLink,
   NavbarToggle,
 } from "flowbite-react";
+import { useEffect, useState } from "react";
 import { FaDiscord } from "react-icons/fa";
 
-export default function TopNav() {
+type Props = { currentPath?: string };
+
+export default function TopNav({ currentPath }: Props) {
+  const [path, setPath] = useState(currentPath ?? "/");
+  useEffect(() => {
+    if (!currentPath) setPath(window.location.pathname);
+  }, [currentPath]);
+
+  const isActive = (href: string) => {
+    if (href === "/") return path === "/";
+    // Marca activo para rutas anidadas (/blog/ y /blog/slug)
+    return path === href || path.startsWith(href);
+  };
+
   return (
     <Navbar
       fluid
@@ -26,9 +40,9 @@ export default function TopNav() {
 
       <NavbarToggle />
       <NavbarCollapse>
-        <NavbarLink href="/" active className="text-[var(--color-text)]">Inicio</NavbarLink>
-        <NavbarLink href="/blog/" className="text-[var(--color-text)]">Blog</NavbarLink>
-        <NavbarLink href="/about/" className="text-[var(--color-text)]">About</NavbarLink>
+        <NavbarLink href="/"        active={isActive("/")}        className="text-[var(--color-text)]">Inicio</NavbarLink>
+        <NavbarLink href="/blog/"   active={isActive("/blog/")}   className="text-[var(--color-text)]">Blog</NavbarLink>
+        <NavbarLink href="/about/"  active={isActive("/about/")}  className="text-[var(--color-text)]">About</NavbarLink>
       </NavbarCollapse>
 
       <Button

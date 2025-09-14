@@ -25,7 +25,7 @@ const posts = Array.from({ length: 6 }).map((_, i) => ({
 ---
 
 <RootLayout title="Inicio">
-  <TopNav client:load />
+  <TopNav currentPath={Astro.url.pathname} client:load />
 
   <Hero />
 
