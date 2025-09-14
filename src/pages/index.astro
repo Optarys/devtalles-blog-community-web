@@ -1,17 +1,7 @@
 ---
-import RootLayout from "@/layouts/RootLayout.astro";
-import TopNav from "@/components/ui/TopNav.tsx";
-import FooterSimple from "@/components/ui/FooterSimple.tsx";
-
-// Secciones
-import Hero from "@/components/sections/Hero.astro";
-import PostList from "@/components/sections/PostList.astro";
-import Features from "@/components/sections/Features.astro";
-import Mascot from "@/components/sections/Mascot.astro";
-import CTA from "@/components/sections/CTA.astro";
-
-// Divisor suave (opción A)
-import SectionDivider from "@/components/ui/SectionDivider.astro";
+import { RootLayout } from "@/layouts";
+import { TopNav, FooterSimple, SectionDivider } from "@/components/ui";
+import { Hero, PostList, Features, Mascot, CTA } from "@/components/sections";
 
 // Mock temporal
 const posts = Array.from({ length: 6 }).map((_, i) => ({

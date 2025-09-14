@@ -1,9 +1,7 @@
-import { ENDPOINTS } from '@/lib/endpoints';
-import { http } from '@/lib/http';
-import type { Category, Paginated } from '@/types';
+import { ENDPOINTS, http } from '@/lib';
+import type { Category } from '@/types';
 
 export async function listCategories() {
-  // si tu API pagina categorías, cambia a Paginated<Category>
   return http.get<Category[]>(ENDPOINTS.categories);
 }
 

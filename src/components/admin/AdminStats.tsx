@@ -1,5 +1,5 @@
 import { useEffect, useState, type JSX } from "react";
-import { getAllPosts, type Post } from "@/lib/adminStore";
+import { getAllPosts, type LocalPost } from "@/lib";
 import { FiFileText, FiCheckCircle, FiEdit3, FiTag } from "react-icons/fi";
 
 type Stat = {

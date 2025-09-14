@@ -1,7 +1,5 @@
-import { ENDPOINTS } from '@/lib/endpoints';
-import { http } from '@/lib/http';
-import type { Paginated } from '@/types/common';
-import type { Comment, CreateCommentDTO } from '@/types/blog';
+import { ENDPOINTS, http } from '@/lib';
+import type { Paginated, Comment, CreateCommentDTO } from '@/types';
 
 export async function listComments(postId: number | string, page = 1, pageSize = 20) {
   const q = new URLSearchParams({ page: String(page), pageSize: String(pageSize) }).toString();

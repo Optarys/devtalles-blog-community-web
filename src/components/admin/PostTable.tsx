@@ -12,13 +12,13 @@ import {
   getAllPosts,
   deletePost,
   toggleStatus,
-  type Post,
-} from "@/lib/adminStore";
-import Button from "@/components/ui/Button";
+  type LocalPost,
+} from "@/lib";
+import { Button } from "@/components/ui";
 import { FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 
 export default function PostTable() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<LocalPost[]>([]);
 
   const refresh = () => setPosts(getAllPosts());
   useEffect(() => {

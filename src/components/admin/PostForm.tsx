@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Textarea, TextInput, Select } from "flowbite-react";
-import Button from "@/components/ui/Button";
-import { upsertPost, getPost, type Post } from "@/lib/adminStore";
-import slugify from "@/lib/slugify";
+import { Button } from "@/components";
+import { slugify, upsertPost, getPost, type LocalPost } from "@/lib";
 import { FiTag, FiX } from "react-icons/fi";
 
 type Props = {
@@ -12,7 +11,7 @@ type Props = {
 
 export default function PostForm({ postId, mode }: Props) {
   const editing = mode === "edit";
-  const initial: Post = {
+  const initial: LocalPost = {
     id: crypto.randomUUID(),
     title: "",
     slug: "",
@@ -24,7 +23,7 @@ export default function PostForm({ postId, mode }: Props) {
     date: new Date().toISOString().slice(0, 10),
   };
 
-  const [data, setData] = useState<Post>(initial);
+  const [data, setData] = useState<LocalPost>(initial);
   const [tagText, setTagText] = useState("");
 
   useEffect(() => {
@@ -46,7 +45,7 @@ export default function PostForm({ postId, mode }: Props) {
   const removeTag = (t: string) => setData({ ...data, tags: data.tags.filter((x) => x !== t) });
 
   const save = (status: "draft" | "published") => {
-    const payload: Post = {
+    const payload: LocalPost = {
       ...data,
       slug: data.slug || autoSlug,
       status,
@@ -125,7 +124,7 @@ export default function PostForm({ postId, mode }: Props) {
             />
             <Select
               value={data.status}
-              onChange={(e) => setData({ ...data, status: e.target.value as Post["status"] })}
+              onChange={(e) => setData({ ...data, status: e.target.value as LocalPost["status"] })}
             >
               <option value="draft">Borrador</option>
               <option value="published">Publicado</option>

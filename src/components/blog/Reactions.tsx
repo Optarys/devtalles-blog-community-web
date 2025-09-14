@@ -1,6 +1,6 @@
 import { useEffect, useState, type JSX } from "react";
 import { FiThumbsUp, FiHeart, FiBookmark } from "react-icons/fi";
-import Button from "@/components/ui/Button.tsx";
+import { Button } from "@/components/ui";
 
 type Props = { slug: string };
 
@@ -22,7 +22,7 @@ export default function Reactions({ slug }: Props) {
     try {
       const raw = localStorage.getItem(KEY(slug));
       if (raw) setStore(JSON.parse(raw));
-    } catch {}
+    } catch { }
   }, [slug]);
 
   const toggle = (key: keyof Counts) => {
@@ -33,7 +33,7 @@ export default function Reactions({ slug }: Props) {
       const next = { counts: nextCounts, you: nextYou };
       try {
         localStorage.setItem(KEY(slug), JSON.stringify(next));
-      } catch {}
+      } catch { }
       return next;
     });
   };

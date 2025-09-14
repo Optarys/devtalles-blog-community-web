@@ -1,9 +1,7 @@
 ---
-import RootLayout from "@/layouts/RootLayout.astro";
-import TopNav from "@/components/ui/TopNav.tsx";
-import Filters from "@/components/ui/Filters.tsx";
-import PostGrid from "@/components/blog/PostGrid.astro";
-import PaginationBar from "@/components/ui/PaginationBar.tsx";
+import { RootLayout } from "@/layouts";
+import { TopNav, PaginationBar, Filters } from "@/components/ui";
+import { PostGrid } from "@/components/blog";
 
 const posts = Array.from({ length: 9 }).map((_, i) => ({
   href: `/blog/post-${i + 1}/`,

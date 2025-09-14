@@ -1,6 +1,5 @@
-import { ENDPOINTS } from '@/lib/endpoints';
-import { http } from '@/lib/http';
-import type { Tag } from '@/types';
+import { ENDPOINTS, http } from "@/lib";
+import type { Tag } from "@/types";
 
 export async function listTags() {
   return http.get<Tag[]>(ENDPOINTS.tags);

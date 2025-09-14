@@ -1,10 +1,9 @@
 ---
-import RootLayout from "@/layouts/RootLayout.astro";
-import TopNav from "@/components/ui/TopNav.tsx";
-import FooterSimple from "@/components/ui/FooterSimple.tsx";
-import PostCard from "@/components/blog/PostCard.astro";
+import { RootLayout } from "@/layouts";
+import { TopNav, FooterSimple } from "@/components/ui";
+import { PostCard } from "@/components/blog";
 import { getCollection } from "astro:content";
-import { formatDate } from "@/lib/formatDate";
+import { formatDate } from "@/lib";
 
 const PAGE_SIZE = 9;
 

@@ -1,14 +1,9 @@
 ---
-import RootLayout from "@/layouts/RootLayout.astro";
-import TopNav from "@/components/ui/TopNav.tsx";
-import FooterSimple from "@/components/ui/FooterSimple.tsx";
-import {
-  getCollection,
-  type CollectionEntry,
-} from "astro:content";
-import { formatDate } from "@/lib/formatDate";
-import Reactions from "@/components/blog/Reactions.tsx";
-import Comments from "@/components/blog/Comments.tsx";
+import { RootLayout } from "@/layouts";
+import { TopNav, FooterSimple } from "@/components/ui";
+import { Reactions, Comments } from "@/components/blog";
+import { getCollection, type CollectionEntry } from "astro:content";
+import { formatDate } from "@/lib";
 
 type PostEntry = CollectionEntry<"posts">;
 

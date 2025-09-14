@@ -7,7 +7,6 @@ import {
   NavbarToggle,
 } from "flowbite-react";
 import { useEffect, useState } from "react";
-import { FaDiscord } from "react-icons/fa";
 
 type Props = { currentPath?: string };
 

@@ -1,7 +1,5 @@
-import { ENDPOINTS } from '@/lib/endpoints';
-import { http } from '@/lib/http';
-import type { Paginated } from '@/types/common';
-import type { ListPostsQuery, Post } from '@/types/blog';
+import { ENDPOINTS, http } from "@/lib";
+import type { Paginated, ListPostsQuery, Post } from '@/types';
 
 function qs<T extends object>(q: T): string {
   const params = new URLSearchParams();

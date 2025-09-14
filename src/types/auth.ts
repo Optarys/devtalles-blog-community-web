@@ -1,4 +1,4 @@
-import type { ID, ISODate } from './common';
+import type { ID, ISODate } from '@/types';
 
 export enum AuthCredentialType {
   EMAIL_PASSWORD = 'email_password',

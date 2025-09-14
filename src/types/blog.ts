@@ -1,5 +1,4 @@
-import type { ID, ISODate } from './common';
-import type { UserSummary } from './auth';
+import type { ID, ISODate, UserSummary } from '@/types';
 
 export interface Category {
   id: ID;
