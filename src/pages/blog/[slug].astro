@@ -12,13 +12,9 @@ export async function getStaticPaths() {
   try {
     const posts = await listPostsGQL();
     if (Array.isArray(posts) && posts.length) {
-      return posts
-        .filter((p) => !!p.slug)
-        .map((p) => ({ params: { slug: p.slug } }));
+      return posts.filter((p) => !!p.slug).map((p) => ({ params: { slug: p.slug } }));
     }
-  } catch {
-  }
-
+  } catch {}
   const md = await getCollection("posts", ({ data }) => data.published !== false);
   return md.map((p) => ({ params: { slug: p.slug } }));
 }
@@ -36,11 +32,13 @@ let description = "";
 let isMd = false;
 let Content: any = null;
 let html = "";
+let headings: { depth: number; slug: string; text: string }[] = [];
 
 let prev: { slug: string; title: string } | null = null;
 let next: { slug: string; title: string } | null = null;
 
 try {
+  // ── CMS / GraphQL ────────────────────────────────────────────────
   const post = await getPostBySlugGQL(slug);
 
   title = post.title;
@@ -65,12 +63,14 @@ try {
     if (idx > 0)              next = { slug: all[idx - 1].slug, title: all[idx - 1].title };
   }
 } catch {
+  // ── Markdown local ────────────────────────────────────────────────
   const all: PostEntry[] = await getCollection("posts", ({ data }) => data.published !== false);
   const entry = all.find((p) => p.slug === slug);
   if (!entry) return new Response("Not found", { status: 404 });
 
   const rendered = await entry.render();
-  Content = rendered.Content;
+  Content   = rendered.Content;
+  headings  = (rendered as any).headings ?? [];
 
   const data = entry.data;
   title = data.title ?? entry.slug;
@@ -122,18 +122,31 @@ const articleJsonLd = {
 
   <TopNav client:load />
 
-  <header class="section relative bg-gradient-to-b from-[var(--surface-0)] to-[var(--surface-1)]">
-    <div class="absolute inset-0 -z-10 bg-grid"></div>
-    <div class="mx-auto max-w-3xl px-6">
-      <a href="/blog/" class="text-sm text-[var(--color-text)]/70 hover:underline">← Volver al blog</a>
-      <h1 class="mt-3 text-3xl md:text-4xl font-extrabold text-[var(--color-title)]">{title}</h1>
+  <!-- ===================== HERO FULL-BLEED ===================== -->
+  <section class="relative isolate">
+    <!-- cover -->
+    <img
+      src={cover}
+      alt={title}
+      class="absolute inset-0 h-[42vh] w-full object-cover"
+      loading="eager"
+      decoding="async"
+      sizes="100vw"
+    />
+    <!-- overlay para legibilidad -->
+    <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-[var(--surface-1)]/95"></div>
 
-      <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-[var(--color-text)]/70">
+    <!-- contenido del hero -->
+    <div class="relative mx-auto max-w-6xl px-6 pt-20 pb-12 md:pt-28 md:pb-16">
+      <a href="/blog/" class="text-xs text-white/80 hover:underline">← Volver al blog</a>
+      <h1 class="mt-4 text-3xl md:text-5xl font-extrabold text-white leading-tight">{title}</h1>
+
+      <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-white/80">
         {date && <span>{date}</span>}
         {tags.length > 0 && (
           <div class="flex flex-wrap gap-2">
             {tags.map((t) => (
-              <span class="rounded-full bg-[var(--color-accent)]/18 px-3 py-1 text-[10px] font-medium text-[var(--color-accent)]">
+              <span class="rounded-full bg-white/15 px-3 py-1 text-[11px] font-medium text-white">
                 {t}
               </span>
             ))}
@@ -141,54 +154,150 @@ const articleJsonLd = {
         )}
       </div>
     </div>
-  </header>
+  </section>
 
-  <div class="bg-[var(--surface-1)]">
-    <div class="mx-auto max-w-5xl px-6 pb-6 pt-2">
-      <img
-        src={cover}
-        alt={title}
-        class="w-full rounded-xl border border-white/10 object-cover"
-        loading="eager"
-        decoding="async"
-      />
-    </div>
-  </div>
+  <!-- =================== MAIN + SIDEBAR =================== -->
+  <section class="relative bg-[var(--surface-1)]">
+    <div class="mx-auto max-w-6xl px-6 py-8 md:py-10">
+      <div class="grid gap-8 lg:grid-cols-12">
+        <!-- Columna de contenido -->
+        <article class="lg:col-span-8">
+          <div
+            class="post-prose prose prose-invert md:prose-lg max-w-none
+                   prose-headings:text-[var(--color-title)]
+                   prose-p:text-[var(--color-text)]
+                   prose-a:text-[var(--color-accent)]
+                   prose-strong:text-[var(--color-title)]"
+          >
+            {isMd ? <Content /> : <div set:html={html}></div>}
+          </div>
 
-  <article class="section mx-auto max-w-3xl px-6">
-    <div class="prose prose-invert max-w-none prose-headings:text-[var(--color-title)] prose-p:text-[var(--color-text)] prose-a:text-[var(--color-accent)] prose-strong:text-[var(--color-title)]">
-      {isMd ? <Content /> : <div set:html={html}></div>}
-    </div>
+          <div class="mt-10">
+            <Reactions client:visible slug={slug} />
+          </div>
 
-    <div class="mt-10">
-      <Reactions client:visible slug={slug} />
-    </div>
+          <div class="mt-10">
+            <Comments client:visible slug={slug} />
+          </div>
 
-    <div class="mt-10">
-      <Comments client:visible slug={slug} />
-    </div>
-
-    {(prev || next) && (
-      <nav class="mt-12 grid grid-cols-2 gap-4">
-        <div>
-          {prev && (
-            <a href={`/blog/${prev.slug}/`} class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition">
-              <span class="text-xs text-[var(--color-text)]/60">← Anterior</span>
-              <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">{prev.title}</div>
-            </a>
+          {(prev || next) && (
+            <nav class="mt-12 grid grid-cols-2 gap-4">
+              <div>
+                {prev && (
+                  <a
+                    href={`/blog/${prev.slug}/`}
+                    class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition"
+                  >
+                    <span class="text-xs text-[var(--color-text)]/60">← Anterior</span>
+                    <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">
+                      {prev.title}
+                    </div>
+                  </a>
+                )}
+              </div>
+              <div class="text-right">
+                {next && (
+                  <a
+                    href={`/blog/${next.slug}/`}
+                    class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition"
+                  >
+                    <span class="text-xs text-[var(--color-text)]/60">Siguiente →</span>
+                    <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">
+                      {next.title}
+                    </div>
+                  </a>
+                )}
+              </div>
+            </nav>
           )}
-        </div>
-        <div class="text-right">
-          {next && (
-            <a href={`/blog/${next.slug}/`} class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition">
-              <span class="text-xs text-[var(--color-text)]/60">Siguiente →</span>
-              <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">{next.title}</div>
-            </a>
+        </article>
+
+        <!-- Sidebar -->
+        <aside class="lg:col-span-4 lg:sticky lg:top-28 h-max space-y-6">
+          <!-- Autor / Info -->
+          <section class="rounded-xl border border-white/10 bg-white/5 p-5">
+            <h2 class="text-sm font-semibold text-[var(--color-title)]">Autor</h2>
+            <p class="mt-2 text-sm text-[var(--color-text)]/80">
+              Publicado por la comunidad <strong>DevTalles</strong>.
+            </p>
+            {date && (
+              <p class="mt-2 text-xs text-[var(--color-text)]/60">📅 {date}</p>
+            )}
+          </section>
+
+          <!-- TOC si hay headings (markdown) -->
+          {headings?.length > 0 && (
+            <section class="rounded-xl border border-white/10 bg-white/5 p-5">
+              <h2 class="text-sm font-semibold text-[var(--color-title)]">En este artículo</h2>
+              <nav class="mt-3">
+                <ul class="space-y-2 text-sm">
+                  {headings.map((h) => (
+                    <li class={`pl-${(h.depth - 1) * 3}`}>
+                      <a href={`#${h.slug}`} class="text-[var(--color-text)]/80 hover:text-[var(--color-accent)]">
+                        {h.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </section>
           )}
-        </div>
-      </nav>
-    )}
-  </article>
+
+          <!-- Compartir -->
+          <section class="rounded-xl border border-white/10 bg-white/5 p-5">
+            <h2 class="text-sm font-semibold text-[var(--color-title)]">Compartir</h2>
+            <div class="mt-3 flex flex-wrap gap-2 text-xs">
+              <a class="rounded-md border border-white/10 bg-white/5 px-3 py-1 hover:bg-white/10"
+                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(canonical)}`}
+                 target="_blank" rel="noopener noreferrer">X/Twitter</a>
+              <a class="rounded-md border border-white/10 bg-white/5 px-3 py-1 hover:bg-white/10"
+                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(canonical)}`}
+                 target="_blank" rel="noopener noreferrer">LinkedIn</a>
+              <a class="rounded-md border border-white/10 bg-white/5 px-3 py-1 hover:bg-white/10"
+                 href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(canonical)}`}
+                 target="_blank" rel="noopener noreferrer">Facebook</a>
+            </div>
+          </section>
+
+          <!-- Etiquetas -->
+          {tags.length > 0 && (
+            <section class="rounded-xl border border-white/10 bg-white/5 p-5">
+              <h2 class="text-sm font-semibold text-[var(--color-title)]">Etiquetas</h2>
+              <div class="mt-3 flex flex-wrap gap-2">
+                {tags.map((t) => (
+                  <span class="rounded-full bg-[var(--color-accent)]/15 px-3 py-1 text-[11px] font-medium text-[var(--color-accent)]">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+        </aside>
+      </div>
+    </div>
+  </section>
 
   <FooterSimple client:load />
 </RootLayout>
+
+<style is:global>
+/* Columna de lectura: imágenes/medios embebidos */
+.post-prose :where(img, video) {
+  max-width: 100%;
+  height: auto;
+  margin: 1.25rem auto;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+/* Ritmo de lectura */
+.post-prose :where(h2){ margin-top: 2.25rem; }
+.post-prose :where(h3){ margin-top: 1.75rem; }
+.post-prose :where(p){ line-height: 1.8; }
+/* Código */
+.post-prose pre {
+  overflow-x: auto;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+</style>
