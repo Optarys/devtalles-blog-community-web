@@ -1,28 +1,39 @@
 ---
 import { RootLayout } from "@/layouts";
-
-import { TopNav, FooterSimple } from "@/components/ui";
+import { TopNav, FooterSimple, PaginationBar, Filters } from "@/components/ui";
 import { PostGrid } from "@/components/blog";
+import { listPosts } from "@/services";
+import type { Post } from "@/types";
 
-const posts = [
-  {
-    href: "/blog/hello/",
-    title: "Primer post",
-    excerpt: "Arrancamos con Astro + Flowbite",
-    cover: "/covers/default.jpg",
-    tags: ["astro", "react"],
-    date: "2025-09-13",
-  },
-  // ... agrega más mocks
-];
+console.info("[BLOG] blog/index.astro: render start");
+
+let items: Post[] = [];
+try {
+  const res = await listPosts({ status: "published" });
+  items = res.items ?? [];
+  console.info("[BLOG] blog/index.astro: listPosts OK, items =", items.length);
+} catch (e) {
+  console.error("[BLOG] blog/index.astro: listPosts ERROR →", e);
+  items = [];
+}
+
+// Shape que espera <PostGrid />
+const posts = items.map((p) => ({
+  href: `/blog/${p.slug}/`,
+  title: p.title,
+  excerpt: p.summary ?? "",
+  cover: (p.seoMeta as any)?.cover ?? "/assets/png/DEVI NORMAL.png",
+  tags: p.tags?.map((t) => t.name) ?? [],
+  date: p.publishedAt ?? p.createdAt,
+}));
 ---
 
-<RootLayout>
+<RootLayout title="Blog">
   <TopNav client:load />
+
+  <!-- Hero / títulos (se mantienen) -->
   <section class="mx-auto max-w-6xl px-4 py-10">
-    <div
-      class="rounded-2xl p-8 md:p-12 bg-gradient-to-br from-[#281C4C] to-[#1A1431]"
-    >
+    <div class="rounded-2xl p-8 md:p-12 bg-gradient-to-br from-[#281C4C] to-[#1A1431]">
       <h1 class="text-3xl md:text-4xl font-semibold text-[var(--title)]">
         Blog de la comunidad
       </h1>
@@ -34,7 +45,19 @@ const posts = [
     <h2 class="mt-8 mb-4 text-xl font-semibold text-[var(--title)]">
       Últimos posts
     </h2>
-    <PostGrid posts={posts} />
+
+    <Filters client:load />
+
+    {posts.length ? (
+      <PostGrid posts={posts} />
+    ) : (
+      <div class="rounded-md border border-white/10 p-6 text-center opacity-70">
+        No hay artículos para mostrar.
+      </div>
+    )}
+
+    <PaginationBar client:load page={1} total={1} />
   </section>
+
   <FooterSimple client:load />
 </RootLayout>

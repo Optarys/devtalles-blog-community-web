@@ -2,49 +2,77 @@
 import { RootLayout } from "@/layouts";
 import { TopNav, FooterSimple } from "@/components/ui";
 import { PostCard } from "@/components/blog";
+import { listPostsGQL } from "@/services";
 import { getCollection } from "astro:content";
 import { formatDate } from "@/lib";
 
 const PAGE_SIZE = 9;
-
-// 1) Trae todos los posts publicados
-const all = await getCollection("posts", ({ data }) => data.published !== false);
-
-// Orden por fecha desc
-all.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
-
-// 2) Query params (usar Astro.url)
 const { searchParams } = Astro.url;
 const q   = (searchParams.get("q") || "").trim().toLowerCase();
 const tag = (searchParams.get("tag") || "").trim().toLowerCase();
 const pageParam = Number(searchParams.get("page") || "1");
 const currentPage = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
 
-// 3) Filtrado por texto y tag
-let filtered = all.filter((p) => {
-  const { title, excerpt, tags = [] } = p.data;
+type Card = { href:string; title:string; excerpt:string; cover:string; tags:string[]; date:string };
+
+let list: {
+  title: string; slug: string; excerpt?: string; cover?: string; tags?: string[]; date?: string;
+}[] = [];
+
+try {
+  const raw = await listPostsGQL();
+  list = raw.map((p) => ({
+    title: p.title,
+    slug: p.slug,
+    excerpt: (p.seoMeta as any)?.excerpt ?? (p.content ? p.content.slice(0, 160) + "…" : ""),
+    cover: (p.seoMeta as any)?.cover ?? (p.seoMeta as any)?.image ?? "/assets/png/DEVI NORMAL.png",
+    tags: p.tags?.map((t) => t.name) ?? [],
+    date: p.publishedAt ?? "",
+  }));
+} catch (e) {
+  console.error("[Blog/index] GraphQL falló:", e);
+}
+
+if (list.length === 0) {
+  const all = await getCollection("posts", ({ data }) => data.published !== false);
+  all.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+  list = all.map((p) => ({
+    title: p.data.title,
+    slug: p.slug,
+    excerpt: p.data.excerpt ?? "",
+    cover: p.data.cover ?? "/assets/png/DEVI NORMAL.png",
+    tags: (p.data.tags ?? []) as string[],
+    date: p.data.date ? formatDate(p.data.date as any) : "",
+  }));
+}
+
+let filtered = list.filter((p) => {
   const matchesQ =
     !q ||
-    title.toLowerCase().includes(q) ||
-    (excerpt || "").toLowerCase().includes(q) ||
-    tags.some((t) => t.toLowerCase().includes(q));
-  const matchesTag = !tag || tags.some((t) => t.toLowerCase() === tag);
+    p.title.toLowerCase().includes(q) ||
+    (p.excerpt ?? "").toLowerCase().includes(q) ||
+    (p.tags ?? []).some((t) => t.toLowerCase().includes(q));
+  const matchesTag = !tag || (p.tags ?? []).some((t) => t.toLowerCase() === tag);
   return matchesQ && matchesTag;
 });
 
-// 4) Paginación
 const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 const page = Math.min(currentPage, totalPages);
 const start = (page - 1) * PAGE_SIZE;
 const end = start + PAGE_SIZE;
-const pageItems = filtered.slice(start, end);
+const pageItems: Card[] = filtered.slice(start, end).map((p) => ({
+  href: `/blog/${p.slug}/`,
+  title: p.title,
+  excerpt: p.excerpt ?? "",
+  cover: p.cover ?? "/assets/png/DEVI NORMAL.png",
+  tags: p.tags ?? [],
+  date: p.date ?? "",
+}));
 
-// 5) Tags únicos
 const tagSet = new Set<string>();
-all.forEach((p) => (p.data.tags || []).forEach((t) => tagSet.add(t)));
+list.forEach((p) => (p.tags ?? []).forEach((t) => tagSet.add(t)));
 const tags = Array.from(tagSet).sort((a, b) => a.localeCompare(b));
 
-// Helper para links de paginación
 function pageHref(n: number) {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
@@ -52,119 +80,31 @@ function pageHref(n: number) {
   params.set("page", String(n));
   return `/blog/?${params.toString()}`;
 }
-
-// Map a PostCard
-const items = pageItems.map((p) => ({
-  href: `/blog/${p.slug}/`,
-  title: p.data.title,
-  excerpt: p.data.excerpt,
-  cover: p.data.cover || "/assets/png/DEVI NORMAL.png",
-  tags: p.data.tags || [],
-  date: formatDate(p.data.date),
-}));
 ---
-
 
 <RootLayout title="Blog">
   <TopNav client:load />
 
-  <!-- HERO BLOG -->
-  <section class="section relative bg-gradient-to-b from-[var(--surface-0)] to-[var(--surface-1)]">
-    <div class="absolute inset-0 -z-10 bg-grid"></div>
-    <div class="mx-auto max-w-6xl px-6 py-14">
-      <h1 class="text-3xl md:text-4xl font-extrabold text-[var(--color-title)]">Blog</h1>
-      <p class="mt-2 text-[var(--color-text)]/80">
-        Explora artículos de frontend, backend, arquitectura, productividad y más.
-      </p>
-
-      <!-- Barra de búsqueda + tags -->
-      <form method="get" class="mt-6 grid gap-3 md:grid-cols-[1fr_auto]">
-        <input
-          type="text"
-          name="q"
-          value={q}
-          placeholder="Buscar artículos…"
-          class="w-full rounded-lg border border-white/10 bg-[var(--surface-0)] p-3 text-[var(--color-text)]
-                 placeholder-white/40 focus:border-[var(--color-accent)] focus:outline-none"
-        />
-        <button
-          type="submit"
-          class="rounded-lg bg-[var(--color-accent)] px-5 py-3 font-semibold
-                 text-[var(--color-accent-foreground)] hover:bg-[#B786F4] transition"
-        >
-          Buscar
-        </button>
-      </form>
-
-      <!-- Filtro por tags -->
-      {tags.length > 0 && (
-        <div class="mt-4 flex flex-wrap gap-2">
-          <a href="/blog/" class={`rounded-full px-3 py-1 text-xs
-              ${!tag ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)]" : "bg-white/10 text-[var(--color-text)] hover:bg-white/15"}`}>
-            Todos
-          </a>
-          {tags.map((t) => (
-            <a
-              href={`/blog/?${new URLSearchParams({ ...(q ? { q } : {}), tag: t })}`}
-              class={`rounded-full px-3 py-1 text-xs
-                ${tag === t.toLowerCase()
-                  ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)]"
-                  : "bg-white/10 text-[var(--color-text)] hover:bg-white/15"}`}
-            >
-              {t}
-            </a>
-          ))}
-        </div>
-      )}
-    </div>
-  </section>
-
-  <!-- LISTADO -->
   <section class="section relative bg-[var(--surface-0)]">
     <div class="mx-auto max-w-6xl px-6">
-      {items.length > 0 ? (
+      {pageItems.length > 0 ? (
         <>
           <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((p) => <PostCard post={p} />)}
+            {pageItems.map((p) => <PostCard post={p} />)}
           </div>
 
-          <!-- Paginación -->
           {totalPages > 1 && (
             <nav class="mt-10 flex items-center justify-center gap-2 text-sm">
-              <a
-                class={`rounded-md border px-3 py-1 ${page > 1
-                  ? "border-white/10 bg-white/5 hover:bg-white/10"
-                  : "pointer-events-none border-white/5 opacity-50"}`}
-                href={page > 1 ? pageHref(page - 1) : "#"}
-              >
-                ← Anterior
-              </a>
+              <a class={`rounded-md border px-3 py-1 ${page > 1 ? "border-white/10 bg-white/5 hover:bg-white/10" : "pointer-events-none border-white/5 opacity-50"}`} href={page > 1 ? pageHref(page - 1) : "#"}>← Anterior</a>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                <a
-                  href={pageHref(n)}
-                  class={`rounded-md px-3 py-1
-                    ${n === page
-                      ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)]"
-                      : "text-[var(--color-text)]/80 hover:bg-white/10"}`}
-                >
-                  {n}
-                </a>
+                <a href={pageHref(n)} class={`rounded-md px-3 py-1 ${n === page ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)]" : "text-[var(--color-text)]/80 hover:bg-white/10"}`}>{n}</a>
               ))}
-              <a
-                class={`rounded-md border px-3 py-1 ${page < totalPages
-                  ? "border-white/10 bg-white/5 hover:bg-white/10"
-                  : "pointer-events-none border-white/5 opacity-50"}`}
-                href={page < totalPages ? pageHref(page + 1) : "#"}
-              >
-                Siguiente →
-              </a>
+              <a class={`rounded-md border px-3 py-1 ${page < totalPages ? "border-white/10 bg-white/5 hover:bg-white/10" : "pointer-events-none border-white/5 opacity-50"}`} href={page < totalPages ? pageHref(page + 1) : "#"}>Siguiente →</a>
             </nav>
           )}
         </>
       ) : (
-        <p class="text-center text-[var(--color-text)]/70">
-          No encontramos artículos que coincidan con tu búsqueda.
-        </p>
+        <p class="text-center text-[var(--color-text)]/70">No encontramos artículos que coincidan con tu búsqueda.</p>
       )}
     </div>
   </section>

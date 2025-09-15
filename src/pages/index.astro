@@ -3,15 +3,6 @@ import { RootLayout } from "@/layouts";
 import { TopNav, FooterSimple, SectionDivider } from "@/components/ui";
 import { Hero, PostList, Features, Mascot, CTA } from "@/components/sections";
 
-// Mock temporal
-const posts = Array.from({ length: 6 }).map((_, i) => ({
-  href: `/blog/post-${i + 1}/`,
-  title: `Post ${i + 1}`,
-  excerpt: "Un pequeño resumen del contenido de este artículo.",
-  cover: "/assets/png/DEVI NORMAL.png",
-  tags: ["astro", "react"].slice(0, (i % 2) + 1),
-  date: "13/09/2025",
-}));
 ---
 
 <RootLayout title="Inicio">
@@ -19,7 +10,7 @@ const posts = Array.from({ length: 6 }).map((_, i) => ({
 
   <Hero />
 
-  <PostList posts={posts} />
+  <PostList />
 
   <SectionDivider />
 

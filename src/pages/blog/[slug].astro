@@ -4,76 +4,119 @@ import { TopNav, FooterSimple } from "@/components/ui";
 import { Reactions, Comments } from "@/components/blog";
 import { getCollection, type CollectionEntry } from "astro:content";
 import { formatDate } from "@/lib";
+import { listPostsGQL, getPostBySlugGQL } from "@/services/posts.graphql";
 
 type PostEntry = CollectionEntry<"posts">;
 
 export async function getStaticPaths() {
-  const posts = await getCollection("posts", ({ data }) => data.published !== false);
-  return posts.map((p) => ({ params: { slug: p.slug } }));
+  try {
+    const posts = await listPostsGQL();
+    if (Array.isArray(posts) && posts.length) {
+      return posts
+        .filter((p) => !!p.slug)
+        .map((p) => ({ params: { slug: p.slug } }));
+    }
+  } catch {
+  }
+
+  const md = await getCollection("posts", ({ data }) => data.published !== false);
+  return md.map((p) => ({ params: { slug: p.slug } }));
 }
 
 const { slug } = Astro.params as { slug: string };
-if (!slug) throw new Error("Slug requerido");
+if (!slug) return new Response("Not found", { status: 404 });
 
-const all: PostEntry[] = await getCollection(
-  "posts",
-  ({ data }) => data.published !== false
-);
+let title = "";
+let date = "";
+let publishedIso: string | null = null;
+let tags: string[] = [];
+let cover = "/assets/png/DEVI NORMAL.png";
+let description = "";
 
-const entry = all.find((p) => p.slug === slug);
-if (!entry) throw Astro.redirect("/blog/");
+let isMd = false;
+let Content: any = null;
+let html = "";
 
-const { Content } = await entry.render();
-const data = entry.data;
+let prev: { slug: string; title: string } | null = null;
+let next: { slug: string; title: string } | null = null;
 
-const title = data.title ?? entry.slug;
-const dateObj = data.date ? new Date(data.date as any) : undefined;
-const date = dateObj ? formatDate(dateObj) : "";
-const tags = (Array.isArray(data.tags) ? data.tags : []) as string[];
-const cover = data.cover ?? "/assets/png/DEVI NORMAL.png";
+try {
+  const post = await getPostBySlugGQL(slug);
 
-// Orden para prev/next
-all.sort((a, b) => {
-  const da = a.data.date ? new Date(a.data.date as any).getTime() : 0;
-  const db = b.data.date ? new Date(b.data.date as any).getTime() : 0;
-  return db - da;
-});
-const idx = all.findIndex((p) => p.slug === entry.slug);
-const prev = idx < all.length - 1 ? all[idx + 1] : null;
-const next = idx > 0 ? all[idx - 1] : null;
+  title = post.title;
+  if (post.publishedAt) {
+    date = formatDate(post.publishedAt);
+    try { publishedIso = new Date(post.publishedAt).toISOString(); } catch {}
+  }
+  tags = post.tags?.map((t) => t.name) ?? [];
 
-// Canonical absoluto si hay site
-const site = Astro.site?.toString().replace(/\/$/, "") ?? "";
-const canonical = site ? `${site}/blog/${entry.slug}/` : `/blog/${entry.slug}/`;
+  const seo = (post.seoMeta as any) ?? {};
+  cover = seo.cover ?? seo.image ?? "/assets/png/DEVI NORMAL.png";
+  description = seo.excerpt ?? "";
 
-// OG image absoluta si hay site
-const ogImage = site
-  ? (cover.startsWith("http") ? cover : `${site}${cover}`)
-  : cover;
+  html = post.content ?? "";
+  isMd = false;
 
-// JSON-LD Article
+  const all = await listPostsGQL();
+  all.sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""));
+  const idx = all.findIndex((p) => p.slug === slug);
+  if (idx !== -1) {
+    if (idx < all.length - 1) prev = { slug: all[idx + 1].slug, title: all[idx + 1].title };
+    if (idx > 0)              next = { slug: all[idx - 1].slug, title: all[idx - 1].title };
+  }
+} catch {
+  const all: PostEntry[] = await getCollection("posts", ({ data }) => data.published !== false);
+  const entry = all.find((p) => p.slug === slug);
+  if (!entry) return new Response("Not found", { status: 404 });
+
+  const rendered = await entry.render();
+  Content = rendered.Content;
+
+  const data = entry.data;
+  title = data.title ?? entry.slug;
+  if (data.date) {
+    date = formatDate(data.date as any);
+    try { publishedIso = new Date(data.date as any).toISOString(); } catch {}
+  }
+  tags = (Array.isArray(data.tags) ? data.tags : []) as string[];
+  cover = data.cover ?? "/assets/png/DEVI NORMAL.png";
+  description = data.excerpt ?? "";
+
+  isMd = true;
+
+  all.sort((a, b) => {
+    const da = a.data.date ? new Date(a.data.date as any).getTime() : 0;
+    const db = b.data.date ? new Date(b.data.date as any).getTime() : 0;
+    return db - da;
+  });
+  const i = all.findIndex((p) => p.slug === entry.slug);
+  if (i !== -1) {
+    if (i < all.length - 1) prev = { slug: all[i + 1].slug, title: all[i + 1].data.title };
+    if (i > 0)              next = { slug: all[i - 1].slug, title: all[i - 1].data.title };
+  }
+}
+
+const site      = Astro.site?.toString().replace(/\/$/, "") ?? "";
+const canonical = site ? `${site}/blog/${slug}/` : `/blog/${slug}/`;
+const ogImage   = site ? (cover.startsWith("http") ? cover : `${site}${cover}`) : cover;
+
 const articleJsonLd = {
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": title,
   "image": [ogImage],
-  ...(dateObj ? { "datePublished": dateObj.toISOString(), "dateModified": dateObj.toISOString() } : {}),
+  ...(publishedIso ? { "datePublished": publishedIso, "dateModified": publishedIso } : {}),
   "author": { "@type": "Organization", "name": "DevTalles Blog" },
   "mainEntityOfPage": { "@type": "WebPage", "@id": canonical }
 };
 ---
 
-<!-- Pasas props SEO al layout aquí -->
-<RootLayout title={title} description={data.excerpt ?? ""} image={ogImage} canonical={canonical}>
-  <!-- Inyección extra al <head> del layout -->
+<RootLayout title={title} description={description} image={ogImage} canonical={canonical}>
   <fragment slot="head">
-    <!-- Marca este post como "article" en OG -->
     <meta property="og:type" content="article" />
-    {dateObj && <meta property="article:published_time" content={dateObj.toISOString()} />}
+    {publishedIso && <meta property="article:published_time" content={publishedIso} />}
     {tags.length > 0 && tags.map((t) => <meta property="article:tag" content={t} />)}
-    <!-- JSON-LD Article -->
     <script type="application/ld+json">{JSON.stringify(articleJsonLd)}</script>
-    <!-- RSS link (opcional, útil para descubrimiento) -->
     <link rel="alternate" type="application/rss+xml" title="DevTalles Blog RSS" href="/rss.xml" />
   </fragment>
 
@@ -89,7 +132,7 @@ const articleJsonLd = {
         {date && <span>{date}</span>}
         {tags.length > 0 && (
           <div class="flex flex-wrap gap-2">
-            {tags.map((t: string) => (
+            {tags.map((t) => (
               <span class="rounded-full bg-[var(--color-accent)]/18 px-3 py-1 text-[10px] font-medium text-[var(--color-accent)]">
                 {t}
               </span>
@@ -112,18 +155,17 @@ const articleJsonLd = {
     </div>
   </div>
 
-  <!-- Contenido -->
   <article class="section mx-auto max-w-3xl px-6">
     <div class="prose prose-invert max-w-none prose-headings:text-[var(--color-title)] prose-p:text-[var(--color-text)] prose-a:text-[var(--color-accent)] prose-strong:text-[var(--color-title)]">
-      <Content />
+      {isMd ? <Content /> : <div set:html={html}></div>}
     </div>
 
     <div class="mt-10">
-      <Reactions client:visible slug={entry.slug} />
+      <Reactions client:visible slug={slug} />
     </div>
 
     <div class="mt-10">
-      <Comments client:visible slug={entry.slug} />
+      <Comments client:visible slug={slug} />
     </div>
 
     {(prev || next) && (
@@ -132,7 +174,7 @@ const articleJsonLd = {
           {prev && (
             <a href={`/blog/${prev.slug}/`} class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition">
               <span class="text-xs text-[var(--color-text)]/60">← Anterior</span>
-              <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">{prev.data.title}</div>
+              <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">{prev.title}</div>
             </a>
           )}
         </div>
@@ -140,7 +182,7 @@ const articleJsonLd = {
           {next && (
             <a href={`/blog/${next.slug}/`} class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition">
               <span class="text-xs text-[var(--color-text)]/60">Siguiente →</span>
-              <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">{next.data.title}</div>
+              <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">{next.title}</div>
             </a>
           )}
         </div>
