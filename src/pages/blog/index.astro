@@ -98,9 +98,22 @@ function pageHref(n: number) {
   params.set("page", String(n));
   return `/blog/?${params.toString()}`;
 }
+function tagHref(t: string) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  params.set("tag", t);
+  params.set("page", "1");
+  return `/blog/?${params.toString()}`;
+}
+function clearFiltersHref() {
+  const params = new URLSearchParams();
+  // sin q ni tag
+  params.set("page", "1");
+  return `/blog/?${params.toString()}`;
+}
 ---
 
-<RootLayout title="Blog">
+<RootLayout title="Blog" description="Artículos técnicos de la comunidad">
   <TopNav client:load />
 
   <section
@@ -163,6 +176,121 @@ function pageHref(n: number) {
     </div>
   </section>
 
+  <!-- Hero / Header -->
+  <header
+    class="section relative bg-gradient-to-b from-[var(--surface-0)] to-[var(--surface-1)]"
+  >
+    <div class="absolute inset-0 -z-10 bg-grid"></div>
+    <div class="mx-auto max-w-6xl px-6">
+      <div
+        class="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[var(--color-text)] md:mx-0"
+      >
+        <span class="relative inline-flex h-2 w-2" aria-hidden="true">
+          <span
+            class="absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent)] opacity-75 motion-safe:animate-[ping_1.6s_ease-in-out_infinite]"
+          ></span>
+          <span
+            class="relative inline-flex h-2 w-2 rounded-full bg-[var(--color-accent)]"
+          ></span>
+        </span>
+        Artículos del blog
+      </div>
+
+      <h1 class="text-3xl md:text-4xl font-extrabold text-[var(--color-title)]">
+        Blog
+      </h1>
+      <p class="mt-2 text-[var(--color-text)]/75 max-w-2xl">
+        Lectura cómoda, temas prácticos y ejemplos directos. Explora por
+        etiquetas o usa el buscador.
+      </p>
+
+      <!-- Buscador -->
+      <form method="get" class="mt-6 max-w-xl">
+        <!-- Conserva el tag activo -->
+        {tag && <input type="hidden" name="tag" value={tag} />}
+        <label class="sr-only" for="search">Buscar</label>
+        <div class="flex items-center gap-2">
+          <input
+            id="search"
+            name="q"
+            type="search"
+            placeholder="Buscar artículos…"
+            value={q}
+            class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40"
+          />
+          <button
+            class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10"
+          >
+            Buscar
+          </button>
+        </div>
+      </form>
+
+      <!-- Filtros por etiqueta -->
+      {
+        tags.length > 0 && (
+          <div class="mt-4 flex flex-wrap gap-2">
+            <a
+              href={clearFiltersHref()}
+              class={
+                "rounded-full px-3 py-1 text-xs border " +
+                (!tag && !q
+                  ? "border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10 text-[var(--color-title)]"
+                  : "border-white/10 bg-white/5 hover:bg-white/10 text-[var(--color-text)]/80")
+              }
+            >
+              Todos
+            </a>
+            {tags.map((t) => (
+              <a
+                href={tagHref(t)}
+                class={
+                  "rounded-full px-3 py-1 text-xs border " +
+                  (tag === t.toLowerCase()
+                    ? "border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10 text-[var(--color-title)]"
+                    : "border-white/10 bg-white/5 hover:bg-white/10 text-[var(--color-text)]/80")
+                }
+              >
+                {t}
+              </a>
+            ))}
+          </div>
+        )
+      }
+
+      {/* Estado de búsqueda/filtros */}
+      {
+        (q || tag) && (
+          <div class="mt-3 text-xs text-[var(--color-text)]/70">
+            {q && (
+              <>
+                Resultados para{" "}
+                <span class="font-medium text-[var(--color-title)]">“{q}”</span>
+                {tag && " · "}
+              </>
+            )}
+            {tag && (
+              <>
+                Etiqueta{" "}
+                <span class="font-medium text-[var(--color-title)]">
+                  “{tag}”
+                </span>
+              </>
+            )}
+            {" · "}
+            <a
+              href={clearFiltersHref()}
+              class="underline text-[var(--color-accent)]"
+            >
+              Limpiar
+            </a>
+          </div>
+        )
+      }
+    </div>
+  </header>
+
+  <!-- Grid de posts -->
   <section class="section relative bg-[var(--surface-0)]">
     <div class="mx-auto max-w-6xl px-6">
       {
