@@ -2,40 +2,57 @@
 import { RootLayout } from "@/layouts";
 import { TopNav, FooterSimple } from "@/components/ui";
 import { PostCard } from "@/components/blog";
-import { listPostsGQL } from "@/services";
 import { getCollection } from "astro:content";
 import { formatDate } from "@/lib";
+import { getAllPosts } from "@/services";
 
 const PAGE_SIZE = 9;
 const { searchParams } = Astro.url;
-const q   = (searchParams.get("q") || "").trim().toLowerCase();
+const q = (searchParams.get("q") || "").trim().toLowerCase();
 const tag = (searchParams.get("tag") || "").trim().toLowerCase();
 const pageParam = Number(searchParams.get("page") || "1");
 const currentPage = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
 
-type Card = { href:string; title:string; excerpt:string; cover:string; tags:string[]; date:string };
+type Card = {
+  href: string;
+  title: string;
+  excerpt: string;
+  cover: string;
+  tags: string[];
+  date: string;
+};
 
 let list: {
-  title: string; slug: string; excerpt?: string; cover?: string; tags?: string[]; date?: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  cover?: string;
+  tags?: string[];
+  date?: string;
 }[] = [];
 
 try {
-  const raw = await listPostsGQL();
-  list = raw.map((p) => ({
+  const rsp = await getAllPosts({ status: "published", orderBy: "publishedAt:desc" });
+  list = rsp.map((p) => ({
     title: p.title,
     slug: p.slug,
-    excerpt: (p.seoMeta as any)?.excerpt ?? (p.content ? p.content.slice(0, 160) + "…" : ""),
-    cover: (p.seoMeta as any)?.cover ?? (p.seoMeta as any)?.image ?? "/assets/png/DEVI NORMAL.png",
-    tags: p.tags?.map((t) => t.name) ?? [],
-    date: p.publishedAt ?? "",
+    excerpt: p.excerpt || (p.content ? p.content.slice(0, 160) + "…" : ""),
+    cover: p.cover || "/assets/png/DEVI NORMAL.png",
+    tags: p.tags,
+    date: p.date || "",
   }));
 } catch (e) {
   console.error("[Blog/index] GraphQL falló:", e);
 }
 
 if (list.length === 0) {
-  const all = await getCollection("posts", ({ data }) => data.published !== false);
-  all.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+  const all = await getCollection(
+    "posts",
+    ({ data }) => data.published !== false,
+  );
+  all.sort(
+    (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime(),
+  );
   list = all.map((p) => ({
     title: p.data.title,
     slug: p.slug,
@@ -52,7 +69,8 @@ let filtered = list.filter((p) => {
     p.title.toLowerCase().includes(q) ||
     (p.excerpt ?? "").toLowerCase().includes(q) ||
     (p.tags ?? []).some((t) => t.toLowerCase().includes(q));
-  const matchesTag = !tag || (p.tags ?? []).some((t) => t.toLowerCase() === tag);
+  const matchesTag =
+    !tag || (p.tags ?? []).some((t) => t.toLowerCase() === tag);
   return matchesQ && matchesTag;
 });
 
@@ -85,27 +103,110 @@ function pageHref(n: number) {
 <RootLayout title="Blog">
   <TopNav client:load />
 
+  <section
+    class="section relative bg-gradient-to-b from-[var(--surface-0)] to-[var(--surface-1)]"
+  >
+    <div class="absolute inset-0 -z-10 bg-grid"></div>
+    <div class="mx-auto max-w-6xl px-6 py-14">
+      <h1 class="text-3xl md:text-4xl font-extrabold text-[var(--color-title)]">
+        Blog
+      </h1>
+      <p class="mt-2 text-[var(--color-text)]/80">
+        Explora artículos de frontend, backend, arquitectura, productividad y
+        más.
+      </p>
+
+      <form method="get" class="mt-6 grid gap-3 md:grid-cols-[1fr_auto]">
+        <input
+          type="text"
+          name="q"
+          value={q}
+          placeholder="Buscar artículos…"
+          class="w-full rounded-lg border border-white/10 bg-[var(--surface-0)] p-3 text-[var(--color-text)]
+                 placeholder-white/40 focus:border-[var(--color-accent)] focus:outline-none"
+        />
+        <button
+          type="submit"
+          class="rounded-lg bg-[var(--color-accent)] px-5 py-3 font-semibold
+                 text-[var(--color-accent-foreground)] hover:bg-[#B786F4] transition"
+        >
+          Buscar
+        </button>
+      </form>
+
+      {
+        tags.length > 0 && (
+          <div class="mt-4 flex flex-wrap gap-2">
+            <a
+              href="/blog/"
+              class={`rounded-full px-3 py-1 text-xs
+              ${!tag ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)]" : "bg-white/10 text-[var(--color-text)] hover:bg-white/15"}`}
+            >
+              Todos
+            </a>
+            {tags.map((t) => (
+              <a
+                href={`/blog/?${new URLSearchParams({ ...(q ? { q } : {}), tag: t })}`}
+                class={`rounded-full px-3 py-1 text-xs
+                ${
+                  tag === t.toLowerCase()
+                    ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)]"
+                    : "bg-white/10 text-[var(--color-text)] hover:bg-white/15"
+                }`}
+              >
+                {t}
+              </a>
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </section>
+
   <section class="section relative bg-[var(--surface-0)]">
     <div class="mx-auto max-w-6xl px-6">
-      {pageItems.length > 0 ? (
-        <>
-          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {pageItems.map((p) => <PostCard post={p} />)}
-          </div>
-
-          {totalPages > 1 && (
-            <nav class="mt-10 flex items-center justify-center gap-2 text-sm">
-              <a class={`rounded-md border px-3 py-1 ${page > 1 ? "border-white/10 bg-white/5 hover:bg-white/10" : "pointer-events-none border-white/5 opacity-50"}`} href={page > 1 ? pageHref(page - 1) : "#"}>← Anterior</a>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                <a href={pageHref(n)} class={`rounded-md px-3 py-1 ${n === page ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)]" : "text-[var(--color-text)]/80 hover:bg-white/10"}`}>{n}</a>
+      {
+        pageItems.length > 0 ? (
+          <>
+            <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {pageItems.map((p) => (
+                <PostCard post={p} />
               ))}
-              <a class={`rounded-md border px-3 py-1 ${page < totalPages ? "border-white/10 bg-white/5 hover:bg-white/10" : "pointer-events-none border-white/5 opacity-50"}`} href={page < totalPages ? pageHref(page + 1) : "#"}>Siguiente →</a>
-            </nav>
-          )}
-        </>
-      ) : (
-        <p class="text-center text-[var(--color-text)]/70">No encontramos artículos que coincidan con tu búsqueda.</p>
-      )}
+            </div>
+
+            {totalPages > 1 && (
+              <nav class="mt-10 flex items-center justify-center gap-2 text-sm">
+                <a
+                  class={`rounded-md border px-3 py-1 ${page > 1 ? "border-white/10 bg-white/5 hover:bg-white/10" : "pointer-events-none border-white/5 opacity-50"}`}
+                  href={page > 1 ? pageHref(page - 1) : "#"}
+                >
+                  ← Anterior
+                </a>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (n) => (
+                    <a
+                      href={pageHref(n)}
+                      class={`rounded-md px-3 py-1 ${n === page ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)]" : "text-[var(--color-text)]/80 hover:bg-white/10"}`}
+                    >
+                      {n}
+                    </a>
+                  ),
+                )}
+                <a
+                  class={`rounded-md border px-3 py-1 ${page < totalPages ? "border-white/10 bg-white/5 hover:bg-white/10" : "pointer-events-none border-white/5 opacity-50"}`}
+                  href={page < totalPages ? pageHref(page + 1) : "#"}
+                >
+                  Siguiente →
+                </a>
+              </nav>
+            )}
+          </>
+        ) : (
+          <p class="text-center text-[var(--color-text)]/70">
+            No encontramos artículos que coincidan con tu búsqueda.
+          </p>
+        )
+      }
     </div>
   </section>
 

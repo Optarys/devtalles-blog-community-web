@@ -11,7 +11,7 @@ export const TEAM: TeamMember[] = [
     {
         name: "Johanssen Roque",
         role: "Líder Frontend / Coordinación General",
-        avatar: "/assets/avatars/johanssen.png",
+        avatar: "/assets/avatars/johanssen3.jpeg",
         bio: "Responsable de la arquitectura de la interfaz, la integración del diseño con la lógica de la aplicación y la coordinación general del proyecto.",
         links: [{ label: "GitHub", href: "https://github.com/johs7" }],
     },

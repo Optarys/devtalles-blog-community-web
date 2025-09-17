@@ -1,4 +1,4 @@
-import { gql, gqlFetch } from "@/lib";
+/* import { gql, gqlFetch } from "@/lib";
 import type { Post, PostStatus, Tag, Category, Paginated, ListPostsQuery } from "@/types";
 
 type GqlTag = { name: string; slug: string }; // sin id en el schema
@@ -113,4 +113,4 @@ export async function getPostBySlug(slug: string) {
   const p = data.posts?.[0];
   if (!p) throw new Error("Post no encontrado");
   return mapPost(p);
-}
+} */

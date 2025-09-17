@@ -4,20 +4,19 @@ import { TopNav, FooterSimple } from "@/components/ui";
 import { Reactions, Comments } from "@/components/blog";
 import { getCollection, type CollectionEntry } from "astro:content";
 import { formatDate } from "@/lib";
-import { listPostsGQL, getPostBySlugGQL } from "@/services/posts.graphql";
+import { getAllPosts, getPostBySlug, type AdminPost } from "@/services";
 
 type PostEntry = CollectionEntry<"posts">;
 
 export async function getStaticPaths() {
   try {
-    const posts = await listPostsGQL();
+    const posts = await getAllPosts({ status: "published" });
     if (Array.isArray(posts) && posts.length) {
       return posts
         .filter((p) => !!p.slug)
         .map((p) => ({ params: { slug: p.slug } }));
     }
-  } catch {
-  }
+  } catch {}
 
   const md = await getCollection("posts", ({ data }) => data.published !== false);
   return md.map((p) => ({ params: { slug: p.slug } }));
@@ -41,59 +40,33 @@ let prev: { slug: string; title: string } | null = null;
 let next: { slug: string; title: string } | null = null;
 
 try {
-  const post = await getPostBySlugGQL(slug);
+  const post = await getPostBySlug(slug);
+  if (!post) throw new Error("Not found");
 
   title = post.title;
-  if (post.publishedAt) {
-    date = formatDate(post.publishedAt);
-    try { publishedIso = new Date(post.publishedAt).toISOString(); } catch {}
+
+  if (post.date) {
+    date = formatDate(post.date);
+    try { publishedIso = new Date(post.date).toISOString(); } catch {}
   }
-  tags = post.tags?.map((t) => t.name) ?? [];
 
-  const seo = (post.seoMeta as any) ?? {};
-  cover = seo.cover ?? seo.image ?? "/assets/png/DEVI NORMAL.png";
-  description = seo.excerpt ?? "";
+  tags = post.tags ?? [];
+  cover = post.cover || "/assets/png/DEVI NORMAL.png";
+  description = post.excerpt || "";
 
-  html = post.content ?? "";
+  html = post.content || "";
   isMd = false;
 
-  const all = await listPostsGQL();
-  all.sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""));
+  const all: AdminPost[] = await getAllPosts({ status: "published" });
+  all.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
   const idx = all.findIndex((p) => p.slug === slug);
   if (idx !== -1) {
     if (idx < all.length - 1) prev = { slug: all[idx + 1].slug, title: all[idx + 1].title };
     if (idx > 0)              next = { slug: all[idx - 1].slug, title: all[idx - 1].title };
   }
-} catch {
-  const all: PostEntry[] = await getCollection("posts", ({ data }) => data.published !== false);
-  const entry = all.find((p) => p.slug === slug);
-  if (!entry) return new Response("Not found", { status: 404 });
-
-  const rendered = await entry.render();
-  Content = rendered.Content;
-
-  const data = entry.data;
-  title = data.title ?? entry.slug;
-  if (data.date) {
-    date = formatDate(data.date as any);
-    try { publishedIso = new Date(data.date as any).toISOString(); } catch {}
-  }
-  tags = (Array.isArray(data.tags) ? data.tags : []) as string[];
-  cover = data.cover ?? "/assets/png/DEVI NORMAL.png";
-  description = data.excerpt ?? "";
-
-  isMd = true;
-
-  all.sort((a, b) => {
-    const da = a.data.date ? new Date(a.data.date as any).getTime() : 0;
-    const db = b.data.date ? new Date(b.data.date as any).getTime() : 0;
-    return db - da;
-  });
-  const i = all.findIndex((p) => p.slug === entry.slug);
-  if (i !== -1) {
-    if (i < all.length - 1) prev = { slug: all[i + 1].slug, title: all[i + 1].data.title };
-    if (i > 0)              next = { slug: all[i - 1].slug, title: all[i - 1].data.title };
-  }
+} catch (e) {
+  console.error("[Blog/detail] GraphQL falló:", e);
 }
 
 const site      = Astro.site?.toString().replace(/\/$/, "") ?? "";
@@ -144,11 +117,11 @@ const articleJsonLd = {
   </header>
 
   <div class="bg-[var(--surface-1)]">
-    <div class="mx-auto max-w-5xl px-6 pb-6 pt-2">
+    <div class="mx-auto max-w-5xl px-6 pb-6 pt-2 flex items-center justify-center">
       <img
         src={cover}
         alt={title}
-        class="w-full rounded-xl border border-white/10 object-cover"
+        class="w-2/5 rounded-xl border border-white/10 object-cover"
         loading="eager"
         decoding="async"
       />
