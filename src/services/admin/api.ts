@@ -1,4 +1,4 @@
-const API_BASE ="/api";
+const API_BASE ="https://optarys-devtalles-blog-api.onrender.com";
 
 /* function getAuthToken(): string | null {
   return localStorage.getItem("devtalles.jwt");
