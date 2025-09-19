@@ -7,7 +7,6 @@ import {
   NavbarToggle,
 } from "flowbite-react";
 import { useEffect, useState } from "react";
-import { FaDiscord } from "react-icons/fa";
 
 type Props = { currentPath?: string };
 
@@ -51,7 +50,6 @@ export default function TopNav({ currentPath }: Props) {
         className="ml-4 flex items-center gap-2"
         onClick={() => (window.location.href = "/auth/login")}
       >
-        <FaDiscord className="text-lg" />
         Login
       </Button>
     </Navbar>

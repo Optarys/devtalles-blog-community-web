@@ -1,20 +1,55 @@
 ---
 import PostCard from "@/components/blog/PostCard.astro";
-const { posts = [] } = Astro.props;
+import { getAllPosts, type AdminPost } from "@/services";
+import { formatDate } from "@/lib";
+
+type Card = {
+  href: string;
+  title: string;
+  excerpt: string;
+  cover: string;
+  tags: string[];
+  date: string;
+};
+
+let cards: Card[] = [];
+
+try {
+  const raw: AdminPost[] = await getAllPosts({ status: "published" });
+
+  raw.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+  const items = raw.slice(0, 6);
+
+  cards = items.map((p) => ({
+    href: `/blog/${p.slug}/`,
+    title: p.title,
+    excerpt: p.excerpt || (p.content ? p.content.slice(0, 160) + "…" : ""),
+    cover: p.cover || "/assets/png/DEVI NORMAL.png",
+    tags: p.tags ?? [],
+    date: p.date ? formatDate(p.date) : "",
+  }));
+} catch (e) {
+  console.error("[Home/PostList] GraphQL falló:", e);
+  cards = [];
+}
 ---
-
 <section class="section relative bg-[var(--surface-1)]">
-  <!-- sutil pattern para que no sea un bloque plano -->
   <div class="absolute inset-0 -z-10 bg-grid"></div>
-
   <div class="mx-auto max-w-6xl px-6">
     <h2 class="text-2xl font-semibold text-[var(--color-title)] mb-6">
       Últimos artículos
     </h2>
 
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {posts.map((p: any) => <PostCard post={p} />)}
-    </div>
+    {cards.length ? (
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map((c) => <PostCard post={c} />)}
+      </div>
+    ) : (
+      <div class="rounded-md border border-white/10 p-6 text-center opacity-70">
+        No hay artículos para mostrar.
+      </div>
+    )}
 
     <div class="text-center mt-8">
       <a

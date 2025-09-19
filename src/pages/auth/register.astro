@@ -1,18 +1,18 @@
 ---
-import RootLayout from "@/layouts/RootLayout.astro";
-import Button from "@/components/ui/Button.tsx";
-import InputField from "@/components/ui/InputField.astro";
-import { FaDiscord } from "react-icons/fa";
+import { RootLayout } from "@/layouts";
+import { Button, InputField } from "@/components/ui";
+import { FaDiscord, FaGithub, FaGoogle } from "react-icons/fa";
+
+const API_URL = import.meta.env.PUBLIC_API_URL;
+const FRONT = import.meta.env.PUBLIC_FRONTEND_URL;
+const REDIRECT = encodeURIComponent(`${FRONT}/auth/callback`);
 ---
 
 <RootLayout title="Crear cuenta">
-  <!-- Full screen split -->
   <section class="grid min-h-[100svh] w-full grid-cols-1 md:grid-cols-2">
-    <!-- IZQUIERDA: Branding (imagen + overlay oscuro) -->
     <div
       class="relative flex items-center justify-center p-8 md:p-12 overflow-hidden"
     >
-      <!-- Cambia la ruta/extension a tu archivo real -->
       <div
         class="absolute inset-0 bg-[url('/assets/img/devtalles.jpg')] bg-cover bg-center"
         aria-hidden="true"
@@ -70,7 +70,6 @@ import { FaDiscord } from "react-icons/fa";
       </div>
     </div>
 
-    <!-- DERECHA: Formulario de registro -->
     <div class="flex items-center justify-center p-8 md:p-12">
       <div
         class="w-full max-w-md rounded-2xl border border-white/10 bg-[var(--color-contrast)]/60 p-8 shadow-xl backdrop-blur-sm"
@@ -151,14 +150,37 @@ import { FaDiscord } from "react-icons/fa";
         </div>
 
         <!-- Alternativa: Discord -->
-        <Button
-          href="/auth/discord"
-          variant="outline"
-          fullWidth={true}
-          size="md"
-        >
-          Registrarme con Discord
-        </Button>
+        <div class="space-y-3">
+          <Button
+            href={`${API_URL}/auth/oauth2/redirect?provider=discord&redirect_uri=${REDIRECT}`}
+            variant="outline"
+            fullWidth={true}
+            size="md"
+          >
+            <FaDiscord className="text-lg" />
+            <span class="ml-2">Registrarme con Discord</span>
+          </Button>
+
+          <Button
+            href={`${API_URL}/auth/oauth2/redirect?provider=google&redirect_uri=${REDIRECT}`}
+            variant="outline"
+            fullWidth={true}
+            size="md"
+          >
+            <FaGoogle className="text-lg" />
+            <span class="ml-2">Registrarme con Google</span>
+          </Button>
+
+          <Button
+            href={`${API_URL}/auth/oauth2/redirect?provider=github&redirect_uri=${REDIRECT}`}
+            variant="outline"
+            fullWidth={true}
+            size="md"
+          >
+            <FaGithub className="text-lg" />
+            <span class="ml-2">Registrarme con GitHub</span>
+          </Button>
+        </div>
 
         <p class="mt-6 text-center text-sm text-[var(--color-text)]/70">
           ¿Ya tienes cuenta?

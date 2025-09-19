@@ -1,24 +1,22 @@
 ---
-import RootLayout from "@/layouts/RootLayout.astro";
-import Button from "@/components/ui/Button.tsx";
-import InputField from "@/components/ui/InputField.astro";
-import { FaDiscord } from "react-icons/fa";
+import { RootLayout } from "@/layouts";
+import { Button, InputField } from "@/components/ui";
+import { FaDiscord, FaGithub, FaGoogle } from "react-icons/fa";
+const API_URL = import.meta.env.PUBLIC_API_URL;
+const FRONT = import.meta.env.PUBLIC_FRONTEND_URL;
+const REDIRECT = encodeURIComponent(`${FRONT}/auth/callback`);
 ---
 
 <RootLayout title="Iniciar sesión">
-  <!-- Full screen split -->
   <section class="grid min-h-[100svh] w-full grid-cols-1 md:grid-cols-2">
-    <!-- IZQUIERDA: Branding con fondo + overlay oscuro -->
     <div
       class="relative flex items-center justify-center p-8 md:p-12 overflow-hidden"
     >
-      <!-- Fondo imagen (ajusta la ruta/extension a tu archivo real) -->
       <div
         class="absolute inset-0 bg-[url('/assets/png/evtalles.jpg')] bg-cover bg-center"
         aria-hidden="true"
       >
       </div>
-      <!-- Overlay negro con opacidad -->
       <div class="absolute inset-0 bg-black/55" aria-hidden="true"></div>
 
       <div class="relative z-10 max-w-md text-center md:text-left">
@@ -71,8 +69,6 @@ import { FaDiscord } from "react-icons/fa";
         </a>
       </div>
     </div>
-
-    <!-- DERECHA: Formulario de login -->
     <div class="flex items-center justify-center p-8 md:p-12">
       <div
         class="w-full max-w-md rounded-2xl border border-white/10 bg-[var(--color-contrast)]/60 p-8 shadow-xl backdrop-blur-sm"
@@ -122,14 +118,35 @@ import { FaDiscord } from "react-icons/fa";
           <span class="h-px flex-1 bg-white/10"></span>
         </div>
 
-        <Button
-          href="https://optarys-devtalles-blog-api.onrender.com/auth/oauth2/redirect?provider=github"
-          variant="outline"
-          fullWidth={true}
-          size="md"
-        >
-          Continuar con Discord
-        </Button>
+        <div class="space-y-3">
+          <Button
+            href={`${API_URL}/auth/oauth2/redirect?provider=discord&redirect_uri=${REDIRECT}`}
+            variant="outline"
+            fullWidth={true}
+            size="md"
+          >
+            <FaDiscord className="text-lg" />
+            <span class="ml-2">Continuar con Discord</span>
+          </Button>
+          <Button
+            href={`${API_URL}/auth/oauth2/redirect?provider=google&redirect_uri=${REDIRECT}`}
+            variant="outline"
+            fullWidth={true}
+            size="md"
+          >
+            <FaGoogle className="text-lg" />
+            <span class="ml-2">Continuar con Google</span>
+          </Button>
+          <Button
+            href={`${API_URL}/auth/oauth2/redirect?provider=github&redirect_uri=${REDIRECT}`}
+            variant="outline"
+            fullWidth={true}
+            size="md"
+          >
+            <FaGithub className="text-lg" />
+            <span class="ml-2">Continuar con GitHub</span>
+          </Button>
+        </div>
 
         <p class="mt-6 text-center text-sm text-[var(--color-text)]/70">
           ¿No tienes cuenta?

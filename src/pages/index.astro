@@ -1,27 +1,10 @@
 ---
-import RootLayout from "@/layouts/RootLayout.astro";
-import TopNav from "@/components/ui/TopNav.tsx";
-import FooterSimple from "@/components/ui/FooterSimple.tsx";
+import { RootLayout } from "@/layouts";
+import { TopNav, FooterSimple, SectionDivider } from "@/components/ui";
+import { Hero, PostList, Features, Mascot, CTA } from "@/components/sections";
 
-// Secciones
-import Hero from "@/components/sections/Hero.astro";
-import PostList from "@/components/sections/PostList.astro";
-import Features from "@/components/sections/Features.astro";
-import Mascot from "@/components/sections/Mascot.astro";
-import CTA from "@/components/sections/CTA.astro";
-
-// Divisor suave (opción A)
-import SectionDivider from "@/components/ui/SectionDivider.astro";
-
-// Mock temporal
-const posts = Array.from({ length: 6 }).map((_, i) => ({
-  href: `/blog/post-${i + 1}/`,
-  title: `Post ${i + 1}`,
-  excerpt: "Un pequeño resumen del contenido de este artículo.",
-  cover: "/assets/png/DEVI NORMAL.png",
-  tags: ["astro", "react"].slice(0, (i % 2) + 1),
-  date: "13/09/2025",
-}));
+const API_URL = import.meta.env.PUBLIC_API_URL ?? "https://optarys-devtalles-blog-api.onrender.com";
+const DEFAULT_NEXT = "/admin";
 ---
 
 <RootLayout title="Inicio">
@@ -29,7 +12,7 @@ const posts = Array.from({ length: 6 }).map((_, i) => ({
 
   <Hero />
 
-  <PostList posts={posts} />
+  <PostList />
 
   <SectionDivider />
 
@@ -40,3 +23,68 @@ const posts = Array.from({ length: 6 }).map((_, i) => ({
 
   <FooterSimple client:load />
 </RootLayout>
+
+<script type="module" define:vars={{ API_URL, DEFAULT_NEXT }}>
+  console.debug("[auth] boot", { API_URL });
+
+  const params = new URLSearchParams(location.search);
+  const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  const next = params.get("next") || DEFAULT_NEXT;
+
+  let exchange = params.get("exchange");
+  if (!exchange && isLocal) {
+    exchange = localStorage.getItem("dev_exchange") || null;
+  }
+
+  async function runExchange(code) {
+    if (!code) { console.debug("[auth] no exchange; skip"); return; }
+
+    try {
+      const url = new URL("/auth/oauth2/exchange", API_URL);
+      url.searchParams.set("code", code);
+
+      const resp = await fetch(url.toString(), {
+        method: "GET",
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+      console.debug("[auth] exchange status:", resp.status);
+
+      if (!resp.ok) {
+        history.replaceState({}, "", "/?login=failed");
+        return;
+      }
+
+      const ct = resp.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        const data = await resp.json().catch(() => ({}));
+        const jwt = data?.jwt || data?.token || data?.access_token || data?.authToken;
+        if (jwt) sessionStorage.setItem("auth_token", jwt);
+      }
+
+      try {
+        const me = await fetch(new URL("/auth/me", API_URL), {
+          credentials: "include",
+          headers: (() => {
+            const t = sessionStorage.getItem("auth_token");
+            return t ? { Authorization: `Bearer ${t}` } : {};
+          })(),
+        });
+        if (me.ok) {
+          const user = await me.json().catch(() => null);
+          if (user) sessionStorage.setItem("auth_user", JSON.stringify(user));
+        }
+      } catch {}
+
+      if (params.has("exchange")) history.replaceState({}, "", next);
+      location.assign(next);
+    } catch (e) {
+      console.error("[auth] error:", e);
+      history.replaceState({}, "", "/?login=error");
+    }
+  }
+
+  runExchange(exchange);
+
+  window.__runExchange = (code) => runExchange(code || localStorage.getItem("dev_exchange"));
+</script>

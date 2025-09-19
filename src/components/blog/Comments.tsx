@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import Button from "@/components/ui/Button.tsx";
+import { Button } from "@/components/ui";
 
 type Props = { slug: string };
 type Comment = { id: string; name: string; text: string; ts: number; clientId: string };
@@ -22,21 +22,21 @@ export default function Comments({ slug }: Props) {
       const id = localStorage.getItem(CLIENT_KEY) || uuid();
       localStorage.setItem(CLIENT_KEY, id);
       setClientId(id);
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY(slug));
       if (raw) setComments(JSON.parse(raw));
-    } catch {}
+    } catch { }
   }, [slug]);
 
   const save = (next: Comment[]) => {
     setComments(next);
     try {
       localStorage.setItem(KEY(slug), JSON.stringify(next));
-    } catch {}
+    } catch { }
   };
 
   const onSubmit = (e: React.FormEvent) => {

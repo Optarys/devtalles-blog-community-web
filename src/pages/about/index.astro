@@ -1,0 +1,49 @@
+---
+import { AboutLayout } from "@/layouts";
+---
+
+<AboutLayout
+  title="About — Proyecto del equipo"
+  description="Quiénes somos, qué construimos y por qué."
+  sectionTitle="Resumen"
+  sectionDescription="Visión general del equipo y el producto"
+>
+  <div class="space-y-6 text-[var(--color-text)]/85">
+    <p>
+      Somos un equipo que construyó un blog técnico con Astro + islas React. La
+      web está pensada para lectura cómoda, buen posicionamiento y un flujo
+      simple de publicación. Aquí encontrarás quiénes somos, qué hace el
+      producto y el contexto del desafío que abordamos.
+    </p>
+
+    <div class="grid gap-4 md:grid-cols-3">
+      <a
+        href="/about/team/"
+        class="rounded-xl border border-white/10 p-4 hover:bg-white/5 transition"
+      >
+        <h3 class="font-semibold text-[var(--color-title)]">Equipo</h3>
+        <p class="text-sm text-[var(--color-text)]/70">
+          Roles y responsables detrás del proyecto.
+        </p>
+      </a>
+      <a
+        href="/about/product/"
+        class="rounded-xl border border-white/10 p-4 hover:bg-white/5 transition"
+      >
+        <h3 class="font-semibold text-[var(--color-title)]">El producto</h3>
+        <p class="text-sm text-[var(--color-text)]/70">
+          Qué ofrece la web, para quién y cómo se usa.
+        </p>
+      </a>
+      <a
+        href="/about/challenge/"
+        class="rounded-xl border border-white/10 p-4 hover:bg-white/5 transition"
+      >
+        <h3 class="font-semibold text-[var(--color-title)]">El desafío</h3>
+        <p class="text-sm text-[var(--color-text)]/70">
+          Contexto y objetivos del reto que completamos.
+        </p>
+      </a>
+    </div>
+  </div>
+</AboutLayout>

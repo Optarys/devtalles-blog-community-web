@@ -1,0 +1,88 @@
+---
+const API_URL = import.meta.env.PUBLIC_API_URL;
+const url = new URL(Astro.request.url);
+const next = url.searchParams.get("next") ?? "/";
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Autenticando…</title>
+  </head>
+  <body>
+    <script type="module">
+      const COOKIE_NAME = "jwt";
+      const API_URL = import.meta.env.PUBLIC_API_URL;
+
+      const getCookie = (name) => {
+        const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+        return m ? decodeURIComponent(m[1]) : null;
+      };
+
+      (async () => {
+        const params = new URLSearchParams(location.search);
+        const next = params.get("next") || "/";
+
+        const tokenInUrl = params.get("token");
+        if (tokenInUrl) {
+          sessionStorage.setItem("auth_token", tokenInUrl);
+          try {
+            const r = await fetch(`${API_URL}/auth/me`, {
+              headers: { Authorization: `Bearer ${tokenInUrl}` },
+              credentials: "include",
+            });
+            if (r.ok) {
+              const me = await r.json();
+              sessionStorage.setItem("auth_user", JSON.stringify(me));
+            }
+          } catch {}
+          location.replace(next);
+          return;
+        }
+
+        const code = params.get("code");
+        const state = params.get("state");
+        if (code) {
+          try {
+            const url = new URL(`${API_URL}/auth/oauth2/callback`);
+            url.searchParams.set("code", code);
+            if (state) url.searchParams.set("state", state);
+
+            const resp = await fetch(url.toString(), {
+              method: "GET",
+              credentials: "include",
+            });
+
+            if (!resp.ok) throw new Error("Callback failed");
+
+            const cookieToken = getCookie(COOKIE_NAME);
+            if (cookieToken) {
+              sessionStorage.setItem("auth_token", cookieToken);
+            }
+
+            try {
+              const meRes = await fetch(`${API_URL}/auth/me`, {
+                credentials: "include",
+                headers: cookieToken
+                  ? { Authorization: `Bearer ${cookieToken}` }
+                  : {},
+              });
+              if (meRes.ok) {
+                const me = await meRes.json();
+                sessionStorage.setItem("auth_user", JSON.stringify(me));
+              }
+            } catch {}
+
+            location.replace(next);
+          } catch (err) {
+            console.error(err);
+            location.replace("/auth/login?error=oauth_callback_failed");
+          }
+          return;
+        }
+
+        location.replace("/auth/login");
+      })();
+    </script>
+  </body>
+</html>

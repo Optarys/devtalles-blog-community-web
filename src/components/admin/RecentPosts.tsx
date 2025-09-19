@@ -8,12 +8,12 @@ import {
   TableCell,
   Badge,
 } from "flowbite-react";
-import { getAllPosts, type Post } from "@/lib/adminStore";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui";
 import { FiEdit } from "react-icons/fi";
+import { getAllPosts, type LocalPost } from "@/lib";
 
 export default function RecentPosts() {
-  const [rows, setRows] = useState<Post[]>([]);
+  const [rows, setRows] = useState<LocalPost[]>([]);
 
   useEffect(() => {
     const list = getAllPosts().slice(0, 5);

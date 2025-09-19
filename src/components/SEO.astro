@@ -1,0 +1,59 @@
+---
+const {
+  title = "DevTalles Blog",
+  description = "Blog con Astro + Flowbite React",
+  type = "website", // o "article"
+  image = "/og-default.png",
+  canonical,
+  noindex = false,
+  publishedTime,
+  modifiedTime,
+  tags = [],
+} = Astro.props;
+
+const site = Astro.site?.toString().replace(/\/$/, "") ?? "";
+const url = canonical || (site ? site + Astro.url.pathname : "");
+const robotsContent = noindex ? "noindex,nofollow" : "index,follow";
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={url} />
+<meta name="robots" content={robotsContent} />
+
+<!-- OG -->
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:type" content={type} />
+<meta property="og:url" content={url} />
+<meta property="og:image" content={image} />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={image} />
+
+<!-- Article meta -->
+{
+  type === "article" && publishedTime && (
+    <meta
+      property="article:published_time"
+      content={new Date(publishedTime).toISOString()}
+    />
+  )
+}
+{
+  type === "article" && modifiedTime && (
+    <meta
+      property="article:modified_time"
+      content={new Date(modifiedTime).toISOString()}
+    />
+  )
+}
+{
+  type === "article" &&
+    tags.map((t: string | URL | null | undefined) => (
+      <meta property="article:tag" content={t} />
+    ))
+}

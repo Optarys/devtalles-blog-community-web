@@ -1,127 +1,276 @@
 ---
-import RootLayout from "@/layouts/RootLayout.astro";
-import TopNav from "@/components/ui/TopNav.tsx";
-import FooterSimple from "@/components/ui/FooterSimple.tsx";
-import {
-  getCollection,
-  type CollectionEntry,
-} from "astro:content";
-import { formatDate } from "@/lib/formatDate";
-import Reactions from "@/components/blog/Reactions.tsx";
-import Comments from "@/components/blog/Comments.tsx";
+import { RootLayout } from "@/layouts";
+import { TopNav, FooterSimple } from "@/components/ui";
+import { Reactions, Comments } from "@/components/blog";
+import { getCollection, type CollectionEntry } from "astro:content";
+import { formatDate } from "@/lib";
+import { getAllPosts, getPostBySlug, type AdminPost } from "@/services";
 
 type PostEntry = CollectionEntry<"posts">;
 
 export async function getStaticPaths() {
-  const posts = await getCollection("posts", ({ data }) => data.published !== false);
-  return posts.map((p) => ({ params: { slug: p.slug } }));
+  try {
+    const posts = await getAllPosts({ status: "published" });
+    if (Array.isArray(posts) && posts.length) {
+      return posts.filter((p) => !!p.slug).map((p) => ({ params: { slug: p.slug } }));
+    }
+  } catch {}
+
+  const md = await getCollection("posts", ({ data }) => data.published !== false);
+  return md.map((p) => ({ params: { slug: p.slug } }));
 }
 
 const { slug } = Astro.params as { slug: string };
-if (!slug) throw new Error("Slug requerido");
+if (!slug) return new Response("Not found", { status: 404 });
 
-const all: PostEntry[] = await getCollection(
-  "posts",
-  ({ data }) => data.published !== false
-);
+let title = "";
+let date = "";
+let publishedIso: string | null = null;
+let tags: string[] = [];
+let cover = "/assets/png/DEVI NORMAL.png";
+let description = "";
 
-const entry = all.find((p) => p.slug === slug);
-if (!entry) throw Astro.redirect("/blog/");
+let isMd = false;
+let Content: any = null;
+let html = "";
+let headings: { depth: number; slug: string; text: string }[] = [];
 
-const { Content } = await entry.render();
-const data = entry.data;
+let prev: { slug: string; title: string } | null = null;
+let next: { slug: string; title: string } | null = null;
 
-const title = data.title ?? entry.slug;
-const date = data.date ? formatDate(data.date) : "";
-const tags = (Array.isArray(data.tags) ? data.tags : []) as string[];
-const cover = data.cover ?? "/assets/png/DEVI NORMAL.png";
+try {
+  const post = await getPostBySlug(slug);
+  if (!post) throw new Error("Not found");
 
-all.sort((a, b) => {
-  const da = a.data.date ? new Date(a.data.date).getTime() : 0;
-  const db = b.data.date ? new Date(b.data.date).getTime() : 0;
-  return db - da;
-});
+  title = post.title;
 
-const idx = all.findIndex((p) => p.slug === entry.slug);
-const prev = idx < all.length - 1 ? all[idx + 1] : null;
-const next = idx > 0 ? all[idx - 1] : null;
+  if (post.date) {
+    date = formatDate(post.date);
+    try { publishedIso = new Date(post.date).toISOString(); } catch {}
+  }
+
+  tags = post.tags ?? [];
+  cover = post.cover || "/assets/png/DEVI NORMAL.png";
+  description = post.excerpt || "";
+
+  html = post.content || "";
+  isMd = false;
+
+  const all: AdminPost[] = await getAllPosts({ status: "published" });
+  all.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+  const idx = all.findIndex((p) => p.slug === slug);
+  if (idx !== -1) {
+    if (idx < all.length - 1) prev = { slug: all[idx + 1].slug, title: all[idx + 1].title };
+    if (idx > 0)              next = { slug: all[idx - 1].slug, title: all[idx - 1].title };
+  }
+} catch (e) {
+  console.error("[Blog/detail] GraphQL falló:", e);
+}
+
+const site      = Astro.site?.toString().replace(/\/$/, "") ?? "";
+const canonical = site ? `${site}/blog/${slug}/` : `/blog/${slug}/`;
+const ogImage   = site ? (cover.startsWith("http") ? cover : `${site}${cover}`) : cover;
+
+const articleJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": title,
+  "image": [ogImage],
+  ...(publishedIso ? { "datePublished": publishedIso, "dateModified": publishedIso } : {}),
+  "author": { "@type": "Organization", "name": "DevTalles Blog" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": canonical }
+};
 ---
 
-<RootLayout title={title} description={data.excerpt ?? ""}>
+<RootLayout title={title} description={description} image={ogImage} canonical={canonical}>
+  <fragment slot="head">
+    <meta property="og:type" content="article" />
+    {publishedIso && <meta property="article:published_time" content={publishedIso} />}
+    {tags.length > 0 && tags.map((t) => <meta property="article:tag" content={t} />)}
+    <script type="application/ld+json">{JSON.stringify(articleJsonLd)}</script>
+    <link rel="alternate" type="application/rss+xml" title="DevTalles Blog RSS" href="/rss.xml" />
+  </fragment>
+
   <TopNav client:load />
 
-  <header class="section relative bg-gradient-to-b from-[var(--surface-0)] to-[var(--surface-1)]">
-    <div class="absolute inset-0 -z-10 bg-grid"></div>
-    <div class="mx-auto max-w-3xl px-6">
-      <a href="/blog/" class="text-sm text-[var(--color-text)]/70 hover:underline">← Volver al blog</a>
-      <h1 class="mt-3 text-3xl md:text-4xl font-extrabold text-[var(--color-title)]">{title}</h1>
+  <!-- ===================== HERO FULL-BLEED ===================== -->
+  <section class="relative isolate">
+    <!-- cover -->
+    <!-- <img
+      src={cover}
+      alt={title}
+      class="absolute inset-0 h-[42vh] w-full object-cover"
+      loading="eager"
+      decoding="async"
+      sizes="100vw"
+    /> -->
+    <!-- overlay para legibilidad --><!-- 
+    <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-[var(--surface-1)]/95"></div> -->
 
-      <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-[var(--color-text)]/70">
+    <!-- contenido del hero -->
+    <div class="relative mx-auto max-w-6xl px-6 pt-20 pb-12 md:pt-28 md:pb-16">
+      <a href="/blog/" class="text-xs text-white/80 hover:underline">← Volver al blog</a>
+      <h1 class="mt-4 text-3xl md:text-5xl font-extrabold text-white leading-tight">{title}</h1>
+
+      <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-white/80">
         {date && <span>{date}</span>}
-        {
-          tags.length > 0 && (
-            <div class="flex flex-wrap gap-2">
-              {tags.map((t: string) => (
-                <span class="rounded-full bg-[var(--color-accent)]/18 px-3 py-1 text-[10px] font-medium text-[var(--color-accent)]">
-                  {t}
-                </span>
-              ))}
-            </div>
-          )
-        }
+        {tags.length > 0 && (
+          <div class="flex flex-wrap gap-2">
+            {tags.map((t) => (
+              <span class="rounded-full bg-white/15 px-3 py-1 text-[11px] font-medium text-white">
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
-  </header>
+  </section>
 
   <div class="bg-[var(--surface-1)]">
-    <div class="mx-auto max-w-5xl px-6 pb-6 pt-2">
+    <div class="mx-auto max-w-5xl px-6 pb-6 pt-2 flex items-center justify-center">
       <img
         src={cover}
         alt={title}
-        class="w-full rounded-xl border border-white/10 object-cover"
+        class="w-2/5 rounded-xl border border-white/10 object-cover"
         loading="eager"
         decoding="async"
       />
     </div>
   </div>
 
-  <!-- Contenido -->
   <article class="section mx-auto max-w-3xl px-6">
     <div class="prose prose-invert max-w-none prose-headings:text-[var(--color-title)] prose-p:text-[var(--color-text)] prose-a:text-[var(--color-accent)] prose-strong:text-[var(--color-title)]">
-      <Content />
+      {isMd ? <Content /> : <div set:html={html}></div>}
     </div>
 
-    <div class="mt-10">
-      <Reactions client:visible slug={entry.slug} />
-    </div>
-
-    <div class="mt-10">
-      <Comments client:visible slug={entry.slug} />
-    </div>
-
-    {
-      (prev || next) && (
-        <nav class="mt-12 grid grid-cols-2 gap-4">
-          <div>
-            {prev && (
-              <a href={`/blog/${prev.slug}/`} class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition">
-                <span class="text-xs text-[var(--color-text)]/60">← Anterior</span>
-                <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">{prev.data.title}</div>
-              </a>
-            )}
+          <div class="mt-10">
+            <Reactions client:visible slug={slug} />
           </div>
-          <div class="text-right">
-            {next && (
-              <a href={`/blog/${next.slug}/`} class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition">
-                <span class="text-xs text-[var(--color-text)]/60">Siguiente →</span>
-                <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">{next.data.title}</div>
-              </a>
-            )}
+
+          <div class="mt-10">
+            <Comments client:visible slug={slug} />
           </div>
-        </nav>
-      )
-    }
-  </article>
+
+          {(prev || next) && (
+            <nav class="mt-12 grid grid-cols-2 gap-4">
+              <div>
+                {prev && (
+                  <a
+                    href={`/blog/${prev.slug}/`}
+                    class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition"
+                  >
+                    <span class="text-xs text-[var(--color-text)]/60">← Anterior</span>
+                    <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">
+                      {prev.title}
+                    </div>
+                  </a>
+                )}
+              </div>
+              <div class="text-right">
+                {next && (
+                  <a
+                    href={`/blog/${next.slug}/`}
+                    class="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition"
+                  >
+                    <span class="text-xs text-[var(--color-text)]/60">Siguiente →</span>
+                    <div class="mt-1 font-medium text-[var(--color-title)] line-clamp-2">
+                      {next.title}
+                    </div>
+                  </a>
+                )}
+              </div>
+            </nav>
+          )}
+        </article>
+
+        <!-- Sidebar -->
+        <aside class="lg:col-span-4 lg:sticky lg:top-28 h-max space-y-6">
+          <!-- Autor / Info -->
+          <section class="rounded-xl border border-white/10 bg-white/5 p-5">
+            <h2 class="text-sm font-semibold text-[var(--color-title)]">Autor</h2>
+            <p class="mt-2 text-sm text-[var(--color-text)]/80">
+              Publicado por la comunidad <strong>DevTalles</strong>.
+            </p>
+            {date && (
+              <p class="mt-2 text-xs text-[var(--color-text)]/60">📅 {date}</p>
+            )}
+          </section>
+
+          <!-- TOC si hay headings (markdown) -->
+          {headings?.length > 0 && (
+            <section class="rounded-xl border border-white/10 bg-white/5 p-5">
+              <h2 class="text-sm font-semibold text-[var(--color-title)]">En este artículo</h2>
+              <nav class="mt-3">
+                <ul class="space-y-2 text-sm">
+                  {headings.map((h) => (
+                    <li class={`pl-${(h.depth - 1) * 3}`}>
+                      <a href={`#${h.slug}`} class="text-[var(--color-text)]/80 hover:text-[var(--color-accent)]">
+                        {h.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </section>
+          )}
+
+          <!-- Compartir -->
+          <section class="rounded-xl border border-white/10 bg-white/5 p-5">
+            <h2 class="text-sm font-semibold text-[var(--color-title)]">Compartir</h2>
+            <div class="mt-3 flex flex-wrap gap-2 text-xs">
+              <a class="rounded-md border border-white/10 bg-white/5 px-3 py-1 hover:bg-white/10"
+                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(canonical)}`}
+                 target="_blank" rel="noopener noreferrer">X/Twitter</a>
+              <a class="rounded-md border border-white/10 bg-white/5 px-3 py-1 hover:bg-white/10"
+                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(canonical)}`}
+                 target="_blank" rel="noopener noreferrer">LinkedIn</a>
+              <a class="rounded-md border border-white/10 bg-white/5 px-3 py-1 hover:bg-white/10"
+                 href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(canonical)}`}
+                 target="_blank" rel="noopener noreferrer">Facebook</a>
+            </div>
+          </section>
+
+          <!-- Etiquetas -->
+          {tags.length > 0 && (
+            <section class="rounded-xl border border-white/10 bg-white/5 p-5">
+              <h2 class="text-sm font-semibold text-[var(--color-title)]">Etiquetas</h2>
+              <div class="mt-3 flex flex-wrap gap-2">
+                {tags.map((t) => (
+                  <span class="rounded-full bg-[var(--color-accent)]/15 px-3 py-1 text-[11px] font-medium text-[var(--color-accent)]">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+        </aside>
+      </div>
+    </div>
+  </section>
 
   <FooterSimple client:load />
 </RootLayout>
+
+<style is:global>
+/* Columna de lectura: imágenes/medios embebidos */
+.post-prose :where(img, video) {
+  max-width: 100%;
+  height: auto;
+  margin: 1.25rem auto;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+/* Ritmo de lectura */
+.post-prose :where(h2){ margin-top: 2.25rem; }
+.post-prose :where(h3){ margin-top: 1.75rem; }
+.post-prose :where(p){ line-height: 1.8; }
+/* Código */
+.post-prose pre {
+  overflow-x: auto;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+</style>

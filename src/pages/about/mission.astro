@@ -1,0 +1,32 @@
+---
+import { AboutLayout } from "@/layouts";
+
+const title = "Misión y valores — DevTalles Community";
+const description =
+  "Nuestra razón de ser y los principios que guían el proyecto.";
+---
+
+<AboutLayout
+  title={title}
+  description={description}
+  sectionTitle="Misión y valores"
+  sectionDescription="Qué perseguimos y cómo tomamos decisiones."
+>
+  <div class="space-y-6">
+    <h2 class="text-xl font-semibold text-[var(--color-title)]">Misión</h2>
+    <p class="text-[var(--color-text)]/85">
+      Democratizar el aprendizaje práctico de desarrollo a través de artículos
+      claros, ejemplos reales y una comunidad que comparte conocimiento sin
+      barreras.
+    </p>
+
+    <h3 class="font-semibold text-[var(--color-title)]">Valores</h3>
+    <ul class="list-disc pl-6 space-y-2 text-[var(--color-text)]/85">
+      <li>Claridad por encima de complejidad</li>
+      <li>Respeto y feedback constructivo</li>
+      <li>Aprender haciendo (hands-on)</li>
+      <li>Calidad y responsabilidad editorial</li>
+      <li>Transparencia en los procesos</li>
+    </ul>
+  </div>
+</AboutLayout>

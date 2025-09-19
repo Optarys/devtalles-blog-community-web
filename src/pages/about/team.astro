@@ -1,0 +1,25 @@
+---
+import { AboutLayout } from "@/layouts";
+import { TEAM } from "@/data";
+import { TeamGrid } from "@/components";
+---
+
+<AboutLayout
+  title="Equipo — Proyecto del equipo"
+  description="Conoce a las personas que construyeron el proyecto."
+  sectionTitle="Equipo"
+  sectionDescription="Personas, roles y responsabilidades"
+>
+  <TeamGrid members={TEAM} />
+
+  <div class="mt-8 rounded-xl border border-white/10 p-4">
+    <h3 class="font-semibold text-[var(--color-title)] mb-2">
+      Cómo trabajamos
+    </h3>
+    <ul class="list-disc pl-6 space-y-1 text-[var(--color-text)]/85">
+      <li>Ritmo ligero con prioridades claras (Home, Blog, SEO).</li>
+      <li>UI coherente con Tailwind; islas React solo donde suma UX.</li>
+      <li>Revisión cruzada antes de mergear cambios clave.</li>
+    </ul>
+  </div>
+</AboutLayout>
