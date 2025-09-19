@@ -1,8 +1,4 @@
-// src/services/admin/api.ts
-const API_BASE =
-    import.meta.env.PUBLIC_API_URL ||
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:3000";
+const API_BASE ="/api";
 
 /* function getAuthToken(): string | null {
   return localStorage.getItem("devtalles.jwt");
@@ -64,7 +60,6 @@ export async function createPost(input: CreatePostInput) {
     if (input.seoMeta) fd.set("seoMeta", JSON.stringify(input.seoMeta));
     fd.set("status", input.status);
 
-    // múltiples archivos con la misma key "banners"
     if (input.banners?.length) {
         for (const f of input.banners) {
             fd.append("banners", f, f.name);
@@ -73,12 +68,11 @@ export async function createPost(input: CreatePostInput) {
 
     const rsp = await fetch(`${API_BASE}/posts`, {
         method: "POST",
-        // NO seteamos Authorization
-        headers: {
-            // NO pongas Content-Type; FormData ya agrega boundary
-            Accept: "*/*",
-        },
+        credentials: "include",
         body: fd,
+        //headers: {
+            //Accept: "*/*",
+        //},
     });
 
     if (!rsp.ok) {

@@ -5,7 +5,10 @@ const next = url.searchParams.get("next") ?? "/";
 ---
 
 <html lang="es">
-  <head><meta charset="utf-8" /><title>Autenticando…</title></head>
+  <head>
+    <meta charset="utf-8" />
+    <title>Autenticando…</title>
+  </head>
   <body>
     <script type="module">
       const COOKIE_NAME = "jwt";
@@ -60,7 +63,9 @@ const next = url.searchParams.get("next") ?? "/";
             try {
               const meRes = await fetch(`${API_URL}/auth/me`, {
                 credentials: "include",
-                headers: cookieToken ? { Authorization: `Bearer ${cookieToken}` } : {},
+                headers: cookieToken
+                  ? { Authorization: `Bearer ${cookieToken}` }
+                  : {},
               });
               if (meRes.ok) {
                 const me = await meRes.json();

@@ -7,7 +7,7 @@ import flowbiteReact from "flowbite-react/plugin/astro";
 import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
-  site: "https://devtalles.community", 
+  site: "https://devtalles.community",
   integrations: [
     react(),
     flowbiteReact(),
@@ -15,5 +15,15 @@ export default defineConfig({
   ],
   vite: {
     plugins: [tailwindcss()],
+    server: {
+      proxy: {
+        "/api": {
+          target: "https://optarys-devtalles-blog-api.onrender.com",
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/api/, ""),
+        },
+      },
+    },
   },
 });
