@@ -4,12 +4,23 @@ import { Button, InputField } from "@/components/ui";
 import { FaDiscord, FaGithub, FaGoogle } from "react-icons/fa";
 
 const API_URL = import.meta.env.PUBLIC_API_URL;
-const FRONT = import.meta.env.PUBLIC_FRONTEND_URL;
-const REDIRECT = encodeURIComponent(`${FRONT}/auth/callback`);
+
+// FRONT para redirect_uri, sin slashes finales
+const FRONT_BASE = (
+  import.meta.env.PUBLIC_FRONTEND_URL ?? Astro.url.origin
+).replace(/\/+$/, "");
+const REDIRECT = encodeURIComponent(`${FRONT_BASE}/auth/callback`);
+
+// Respeta base de astro.config
+const BASE = (import.meta.env.BASE_URL ?? "/").replace(/\/+$/, "");
+const ACTION = `${BASE}/auth/register`;
+
+const error = Astro.url.searchParams.get("error");
 ---
 
 <RootLayout title="Crear cuenta">
   <section class="grid min-h-[100svh] w-full grid-cols-1 md:grid-cols-2">
+    <!-- Columna izquierda -->
     <div
       class="relative flex items-center justify-center p-8 md:p-12 overflow-hidden"
     >
@@ -28,7 +39,6 @@ const REDIRECT = encodeURIComponent(`${FRONT}/auth/callback`);
           loading="lazy"
           decoding="async"
         />
-
         <h1 class="mt-6 text-3xl font-extrabold text-[var(--color-title)]">
           Únete a la comunidad DevTalles
         </h1>
@@ -62,14 +72,15 @@ const REDIRECT = encodeURIComponent(`${FRONT}/auth/callback`);
           target="_blank"
           rel="noopener noreferrer"
           class="mt-8 inline-block rounded-lg border border-[var(--color-accent)] px-5 py-2 font-semibold
-         text-[var(--color-accent)] transition hover:bg-[var(--color-accent)]
-         hover:text-[var(--color-accent-foreground)]"
+                 text-[var(--color-accent)] transition hover:bg-[var(--color-accent)]
+                 hover:text-[var(--color-accent-foreground)]"
         >
           Conocer más
         </a>
       </div>
     </div>
 
+    <!-- Columna derecha -->
     <div class="flex items-center justify-center p-8 md:p-12">
       <div
         class="w-full max-w-md rounded-2xl border border-white/10 bg-[var(--color-contrast)]/60 p-8 shadow-xl backdrop-blur-sm"
@@ -81,25 +92,54 @@ const REDIRECT = encodeURIComponent(`${FRONT}/auth/callback`);
           Completa los datos o usa tu cuenta de Discord.
         </p>
 
-        <form class="space-y-5" method="post" action="/auth/register">
-          <InputField
-            id="name"
-            name="name"
-            type="text"
-            label="Nombre completo"
-            placeholder="Tu nombre"
-            required
-          />
+        {
+          error && (
+            <div class="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+              {error}
+            </div>
+          )
+        }
 
+        <form method="post" action={ACTION} class="space-y-5">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <InputField
+              id="firstName"
+              name="firstName"
+              type="text"
+              label="Nombre"
+              placeholder="Kevin"
+              required
+              autoComplete="given-name"
+            />
+            <InputField
+              id="lastName"
+              name="lastName"
+              type="text"
+              label="Apellido"
+              placeholder="Ortiz"
+              required
+              autoComplete="family-name"
+            />
+          </div>
+
+          <InputField
+            id="username"
+            name="username"
+            type="text"
+            label="Usuario"
+            placeholder="kevin123"
+            required
+            autoComplete="username"
+          />
           <InputField
             id="email"
             name="email"
             type="email"
             label="Correo electrónico"
-            placeholder="tucorreo@email.com"
+            placeholder="user@example.com"
             required
+            autoComplete="email"
           />
-
           <InputField
             id="password"
             name="password"
@@ -107,8 +147,8 @@ const REDIRECT = encodeURIComponent(`${FRONT}/auth/callback`);
             label="Contraseña"
             placeholder="Mínimo 8 caracteres"
             required
+            autoComplete="new-password"
           />
-
           <InputField
             id="confirm"
             name="confirm"
@@ -116,9 +156,9 @@ const REDIRECT = encodeURIComponent(`${FRONT}/auth/callback`);
             label="Confirmar contraseña"
             placeholder="Repite tu contraseña"
             required
+            autoComplete="new-password"
           />
 
-          <!-- Aceptar términos -->
           <label class="flex items-start gap-3 text-sm">
             <input type="checkbox" name="terms" required class="mt-1" />
             <span class="text-[var(--color-text)]/80">
@@ -137,48 +177,50 @@ const REDIRECT = encodeURIComponent(`${FRONT}/auth/callback`);
             </span>
           </label>
 
-          <Button type="submit" fullWidth={true} size="md">
+          <button
+            type="submit"
+            class="w-full rounded-lg px-4 py-2 bg-[var(--color-accent)] text-[var(--color-accent-foreground)]"
+          >
             Crear cuenta
-          </Button>
+          </button>
         </form>
 
-        <!-- Separador -->
         <div class="my-6 flex items-center">
           <span class="h-px flex-1 bg-white/10"></span>
           <span class="mx-3 text-xs text-[var(--color-text)]/60">o</span>
           <span class="h-px flex-1 bg-white/10"></span>
         </div>
 
-        <!-- Alternativa: Discord -->
         <div class="space-y-3">
           <Button
             href={`${API_URL}/auth/oauth2/redirect?provider=discord&redirect_uri=${REDIRECT}`}
             variant="outline"
-            fullWidth={true}
+            fullWidth
             size="md"
           >
-            <FaDiscord className="text-lg" />
-            <span class="ml-2">Registrarme con Discord</span>
+            <FaDiscord className="text-lg" /><span class="ml-2"
+              >Registrarme con Discord</span
+            >
           </Button>
-
           <Button
             href={`${API_URL}/auth/oauth2/redirect?provider=google&redirect_uri=${REDIRECT}`}
             variant="outline"
-            fullWidth={true}
+            fullWidth
             size="md"
           >
-            <FaGoogle className="text-lg" />
-            <span class="ml-2">Registrarme con Google</span>
+            <FaGoogle className="text-lg" /><span class="ml-2"
+              >Registrarme con Google</span
+            >
           </Button>
-
           <Button
             href={`${API_URL}/auth/oauth2/redirect?provider=github&redirect_uri=${REDIRECT}`}
             variant="outline"
-            fullWidth={true}
+            fullWidth
             size="md"
           >
-            <FaGithub className="text-lg" />
-            <span class="ml-2">Registrarme con GitHub</span>
+            <FaGithub className="text-lg" /><span class="ml-2"
+              >Registrarme con GitHub</span
+            >
           </Button>
         </div>
 
