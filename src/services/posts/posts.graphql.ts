@@ -24,7 +24,7 @@ export const LIST_POSTS = gql`
       content
       seoMeta
       publishedAt
-      banners           # <- JSON, sin subcampos
+      banners
       category { name slug description }
       tags { name slug }
     }

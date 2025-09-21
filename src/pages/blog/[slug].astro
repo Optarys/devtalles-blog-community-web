@@ -1,4 +1,5 @@
 ---
+export const prerender = false;
 import { RootLayout } from "@/layouts";
 import { TopNav, FooterSimple } from "@/components/ui";
 import { Reactions, Comments } from "@/components/blog";
@@ -6,8 +7,6 @@ import { getCollection, type CollectionEntry } from "astro:content";
 import { formatDate } from "@/lib";
 import { getAllPosts, getPostBySlug, type AdminPost } from "@/services";
 
-// ⚠️ Solo cambios visuales (inspirado en DEV.to). Lógica de datos intacta.
-// Utilidades locales para derivar TOC desde HTML (sin tocar servicios/types)
 const slugify = (s: string) => (s || "")
   .toLowerCase()
   .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -51,6 +50,7 @@ const { slug } = Astro.params as { slug: string };
 if (!slug) return new Response("Not found", { status: 404 });
 
 let initialComments: { id: string; name: string; text: string; ts: number }[] = [];
+let postId = 0;
 
 let title = "";
 let date = "";
@@ -70,6 +70,8 @@ let next: { slug: string; title: string } | null = null;
 try {
   const post = await getPostBySlug(slug);
   if (!post) throw new Error("Not found");
+
+  postId = post.id;
 
   title = post.title;
 
@@ -172,7 +174,7 @@ const articleJsonLd = {
           <Reactions client:visible slug={slug} />
         </section>
         <section id="comments" class="mt-10">
-          <Comments client:visible slug={slug} initialComments={initialComments} />
+          <Comments client:visible postId={postId} slug={slug} initialComments={initialComments} />
         </section>
 
         {(prev || next) && (

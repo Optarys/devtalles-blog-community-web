@@ -1,38 +1,40 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui";
-import { addComment } from "@/services"; // POST /comments { content, slugPost }
+import { addComment } from "@/services";
 
 type Props = {
-  slug: string;
-  // Lo que viene del servidor (ya mapeado en el servicio con authorName & createdAt -> name & ts)
+  postId: number;
+  slug?: string;
   initialComments?: { id: string; name: string; text: string; ts: number }[];
 };
 
 type Comment = { id: string; name: string; text: string; ts: number; clientId: string };
 
-const KEY = (slug: string) => `dt:cmt:${slug}`;
+const KEY = (key: string | number) => `dt:cmt:${key}`;
 const CLIENT_KEY = "dt:clientId";
 
-// id para cliente (y para comentarios optimistas)
 function localId() {
-  const r = (crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) + Date.now().toString(36);
+  const r =
+    (crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) +
+    Date.now().toString(36);
   return `local-${r}`;
 }
 
-// firma simple para reconciliar optimistas: mismo contenido en la misma ventana de minuto
 function signature(text: string, ts: number) {
   const min = Math.floor(ts / 60000);
   return `${text.trim()}::${min}`;
 }
 
-export default function Comments({ slug, initialComments = [] }: Props) {
+export default function Comments({ postId, slug, initialComments = [] }: Props) {
   const [clientId, setClientId] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
-  const [name, setName] = useState("");    // opcional si luego quieres capturarlo
+  const [name, setName] = useState("");
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Asegura un clientId por navegador
+  const storageBase = postId || slug || "unknown";
+  const storageKey = KEY(storageBase);
+
   useEffect(() => {
     try {
       const id = localStorage.getItem(CLIENT_KEY) || localId();
@@ -41,36 +43,41 @@ export default function Comments({ slug, initialComments = [] }: Props) {
     } catch {}
   }, []);
 
-  // Merge: servidor (prioridad) + optimistas locales no cubiertos
   useEffect(() => {
-    const server: Comment[] = (initialComments || []).map((c) => ({ ...c, clientId: "" }));
+    const server: Comment[] = (initialComments || []).map((c) => ({
+      ...c,
+      clientId: "",
+    }));
 
     let local: Comment[] = [];
     try {
-      const raw = localStorage.getItem(KEY(slug));
+      const raw = localStorage.getItem(storageKey);
       if (raw) local = JSON.parse(raw) as Comment[];
     } catch {}
 
-    // Índice de firmas del server para detectar duplicados de optimistas
     const serverSig = new Set(server.map((c) => signature(c.text, c.ts)));
 
-    // Conserva SOLO optimistas (id local-*) que no estén cubiertos por el server
     const onlyOptimisticNotCovered = local.filter((c) => {
       const isOptimistic = c.id.startsWith("local-");
       if (!isOptimistic) return false;
       return !serverSig.has(signature(c.text, c.ts));
     });
 
-    // Prioriza server y añade optimistas restantes
-    const merged = [...server, ...onlyOptimisticNotCovered].sort((a, b) => b.ts - a.ts);
+    const merged = [...server, ...onlyOptimisticNotCovered].sort(
+      (a, b) => b.ts - a.ts
+    );
 
     setComments(merged);
-    try { localStorage.setItem(KEY(slug), JSON.stringify(merged)); } catch {}
-  }, [slug, initialComments]);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(merged));
+    } catch {}
+  }, [storageKey, initialComments]);
 
   const persist = (next: Comment[]) => {
     setComments(next);
-    try { localStorage.setItem(KEY(slug), JSON.stringify(next)); } catch {}
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {}
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -79,8 +86,13 @@ export default function Comments({ slug, initialComments = [] }: Props) {
     const t = (text || "").trim();
     if (t.length < 3 || submitting) return;
 
-    // Optimista
-    const optimistic: Comment = { id: localId(), name: n, text: t, ts: Date.now(), clientId };
+    const optimistic: Comment = {
+      id: localId(),
+      name: n,
+      text: t,
+      ts: Date.now(),
+      clientId,
+    };
     const snapshot = comments;
     const next = [optimistic, ...comments].slice(0, 200);
     persist(next);
@@ -88,19 +100,20 @@ export default function Comments({ slug, initialComments = [] }: Props) {
     setSubmitting(true);
 
     try {
-      await addComment({ content: t, slugPost: slug });
-      // No hacemos refetch: en la próxima visita (o SSR) el server traerá el real
-      // y el merge eliminará este optimista si coincide por firma.
+      await addComment({
+        content: t,
+        postId,
+        //...(slug ? { slugPost: slug } : {}),
+      });
     } catch (err) {
       console.error(err);
       alert((err as Error).message || "No se pudo enviar el comentario");
-      persist(snapshot); // rollback
+      persist(snapshot);
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Solo se permite borrar los que creó este cliente (optimistas locales)
   const del = (id: string) => {
     const c = comments.find((x) => x.id === id);
     if (!c) return;
@@ -109,10 +122,16 @@ export default function Comments({ slug, initialComments = [] }: Props) {
     persist(comments.filter((x) => x.id !== id));
   };
 
-  const sorted = useMemo(() => [...comments].sort((a, b) => b.ts - a.ts), [comments]);
+  const sorted = useMemo(
+    () => [...comments].sort((a, b) => b.ts - a.ts),
+    [comments]
+  );
 
   const format = (ts: number) =>
-    new Date(ts).toLocaleString("es-NI", { dateStyle: "medium", timeStyle: "short" });
+    new Date(ts).toLocaleString("es-NI", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
 
   const Avatar = ({ name }: { name: string }) => {
     const letter = (name?.[0] || "A").toUpperCase();
