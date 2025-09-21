@@ -28,7 +28,7 @@ function mapComments(arr?: GQLComment[] | null): AdminComment[] {
 }
 
 type GQLPost = {
-  id: string | number;
+  id: number;
   title: string;
   slug: string;
   content?: string | null;
@@ -42,7 +42,7 @@ type GQLPost = {
 };
 
 export type AdminPost = {
-  id: string;
+  id: number;
   title: string;
   slug: string;
   excerpt: string;
@@ -118,7 +118,7 @@ function mapToAdmin(p: GQLPost): AdminPost {
   const coverFromSeo = seo?.cover ?? seo?.image ?? null;
 
   return {
-    id: String(p.id),
+    id: p.id,
     title: p.title,
     slug: p.slug,
     excerpt: p.summary ?? "",
@@ -191,7 +191,7 @@ export async function upsertPost(p: AdminPost & {
   seoMeta?: any;
 }): Promise<void> {
   const input: any = {
-    id: p.id?.trim() ? Number(p.id) : undefined,
+    id: Number(p.id),
     title: p.title,
     slug: p.slug || slugify(p.title),
     summary: p.excerpt || null,
@@ -235,20 +235,16 @@ export async function listRecentForCards(limit = 6) {
 }
 
 export async function listCategories(): Promise<AdminCategory[]> {
-  // 1) Intento top-level (puede NO existir en tu schema)
   try {
     const data = await exec<{ categories: AdminCategory[] }>(Q.LIST_CATEGORIES);
     const cats = data?.categories ?? [];
     if (cats.length) return cats;
   } catch (e) {
-    // Importante: NO relances el error. Este catch evita que se caiga la página.
     console.warn("[listCategories] Query.categories no existe en el schema:", (e as Error)?.message);
   }
 
-  // 2) Fallback: deduplicar desde posts(category)
   const dedup = new Map<string, AdminCategory>();
 
-  // Puedes filtrar por status si quieres limitar.
   const data2 = await exec<{ posts: { category?: AdminCategory | null }[] }>(
     Q.LIST_POSTS_ONLY_CATEGORIES,
     { status: "published" }

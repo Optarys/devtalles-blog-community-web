@@ -16,7 +16,7 @@ const API_URL =
   import.meta.env.PUBLIC_API_URL ??
   import.meta.env.PUBLIC_API_BASE ??
   API_BASE;
-  
+
 async function jsonOrThrow(res: Response) {
   let body: any = null;
   try { body = await res.json(); } catch { /* ignore */ }
@@ -43,8 +43,8 @@ export async function listCommentsBySlug(slugPost: string): Promise<CommentModel
 
 export async function addComment(args: {
   content: string;
-  slugPost: string;
-  idPost?: string;
+  postId: number;
+  slugPost?: string;
 }): Promise<CommentModel | void> {
   const res = await fetch(`${API_URL}/comments`, {
     method: "POST",
@@ -52,8 +52,8 @@ export async function addComment(args: {
     credentials: "include",
     body: JSON.stringify({
       content: args.content,
-      slugPost: args.slugPost,
-      ...(args.idPost ? { idPost: args.idPost } : {}),
+      postId: args.postId,
+      ...(args.slugPost ? { slugPost: args.slugPost } : {}),
     }),
   });
   const data = await jsonOrThrow(res);
