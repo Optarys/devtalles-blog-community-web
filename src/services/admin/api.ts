@@ -1,3 +1,5 @@
+export type CategoryDto = { name: string; slug: string };
+
 const API_BASE ="https://optarys-devtalles-blog-api.onrender.com";
 
 /* function getAuthToken(): string | null {

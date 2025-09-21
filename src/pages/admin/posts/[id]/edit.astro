@@ -1,12 +1,18 @@
 ---
 import { AdminLayout } from "@/layouts";
 import { PostForm } from "@/components";
+import { listCategories } from "@/services";
 
 export const prerender = false;
 
 const { id } = Astro.params;
+if (!id) {
+  throw new Error("Falta id");
+}
+
+const categories = await listCategories();
 ---
 
 <AdminLayout title="Editar publicación">
-  <PostForm client:load mode="edit" postId={id} />
+  <PostForm client:load mode="edit" postId={id} categories={categories} />
 </AdminLayout>

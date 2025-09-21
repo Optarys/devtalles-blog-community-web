@@ -20,9 +20,10 @@ type LocalPost = {
 type Props = {
   postId?: string;
   mode: "create" | "edit";
+  categories?: { name: string; slug: string; description?: string | null }[];
 };
 
-export default function PostForm({ postId, mode }: Props) {
+export default function PostForm({ postId, mode, categories: initialCategories }: Props) {
   const editing = mode === "edit";
 
   const initial: LocalPost = {
@@ -39,17 +40,19 @@ export default function PostForm({ postId, mode }: Props) {
 
   const [data, setData] = useState<LocalPost>(initial);
   const [tagText, setTagText] = useState("");
-  const [category, setCategory] = useState("");     // slug o nombre
   const [banners, setBanners] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
+
+  const [catOptions, setCatOptions] = useState(
+    initialCategories ?? ([] as { name: string; slug: string; description?: string | null }[])
+  );
+  const [categorySlug, setCategorySlug] = useState("");
+  const [categoryManual, setCategoryManual] = useState("");
+
   const autoSlug = useMemo(() => slugify(data.title), [data.title]);
 
-  // Si más adelante quieres cargar datos para editar, conéctalo aquí.
   useEffect(() => {
-    if (editing && postId) {
-      // TODO: traer post desde API para edición (cuando tengamos endpoint)
-      // setData(mappedPost);
-    }
+    if (editing && postId) { }
   }, [editing, postId]);
 
   const addTag = () => {
@@ -66,6 +69,9 @@ export default function PostForm({ postId, mode }: Props) {
     if (!data.title.trim()) return alert("Falta el título.");
     if (!data.content.trim()) return alert("Falta el contenido.");
 
+    const resolvedCategorySlug =
+    categorySlug || (categoryManual.trim() ? slugify(categoryManual.trim()) : undefined);
+
     try {
       setSaving(true);
 
@@ -78,7 +84,7 @@ export default function PostForm({ postId, mode }: Props) {
         title: data.title,
         summary: data.excerpt,
         content: data.content,
-        category: category || undefined,
+        category: resolvedCategorySlug,
         tags: data.tags,
         seoMeta,
         status,
@@ -126,7 +132,7 @@ export default function PostForm({ postId, mode }: Props) {
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
-          {}
+          {/* Título */}
           <TextInput
             value={data.title}
             onChange={(e) => setData({ ...data, title: e.target.value })}
@@ -134,7 +140,7 @@ export default function PostForm({ postId, mode }: Props) {
             required
           />
 
-          {}
+          {/* Slug */}
           <TextInput
             value={data.slug || autoSlug}
             onChange={(e) => setData({ ...data, slug: slugify(e.target.value) })}
@@ -144,21 +150,43 @@ export default function PostForm({ postId, mode }: Props) {
             Puedes dejarlo vacío: se muestra como vista previa; el backend puede generar su propio slug.
           </span>
 
-          {}
+          {/* Summary */}
           <TextInput
             value={data.excerpt}
             onChange={(e) => setData({ ...data, excerpt: e.target.value })}
             placeholder="Resumen corto del artículo (summary)"
           />
 
-          {}
-          <TextInput
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            placeholder="Categoría (slug o nombre)"
-          />
+          {/* Categoría dinámica (Select o fallback manual) */}
+          <div className="space-y-2">
+            <label className="block text-sm text-white/80">Categoría</label>
 
-          {}
+            {catOptions?.length ? (
+              <Select
+                value={categorySlug}
+                onChange={(e) => setCategorySlug(e.target.value)}
+              >
+                <option value="">Selecciona una categoría</option>
+                {catOptions.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.name} ({c.slug})
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              <TextInput
+                value={categoryManual}
+                onChange={(e) => setCategoryManual(e.target.value)}
+                placeholder="Categoría (escribe una nueva)"
+              />
+            )}
+
+            <p className="text-xs text-white/60">
+              ¿No ves tu categoría? Escríbela arriba y la enviaremos como slug (el backend puede crearla).
+            </p>
+          </div>
+
+          {/* Banners */}
           <div>
             <label className="mb-1 block text-sm text-white/80">Banners (imágenes)</label>
             <input
@@ -175,7 +203,7 @@ export default function PostForm({ postId, mode }: Props) {
             )}
           </div>
 
-          {}
+          {/* Tags */}
           <div>
             <label className="mb-1 block text-sm text-white/80">Tags</label>
             <div className="flex gap-2">
@@ -203,7 +231,7 @@ export default function PostForm({ postId, mode }: Props) {
             </div>
           </div>
 
-          {}
+          {/* Fecha / Estado */}
           <div className="grid grid-cols-2 gap-3">
             <TextInput
               type="date"
@@ -228,7 +256,6 @@ export default function PostForm({ postId, mode }: Props) {
             onChange={(e) => setData({ ...data, content: e.target.value })}
             placeholder="Contenido (puedes escribir Markdown)."
           />
-          {/* Vista previa simple */}
           <div className="rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-white/80">
             <div className="mb-2 font-semibold text-[var(--color-title)]">Vista previa</div>
             <div className="whitespace-pre-wrap">
