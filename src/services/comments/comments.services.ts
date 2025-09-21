@@ -16,8 +16,7 @@ const API_URL =
   import.meta.env.PUBLIC_API_URL ??
   import.meta.env.PUBLIC_API_BASE ??
   API_BASE;
-
-/** Utils */
+  
 async function jsonOrThrow(res: Response) {
   let body: any = null;
   try { body = await res.json(); } catch { /* ignore */ }
@@ -28,19 +27,13 @@ async function jsonOrThrow(res: Response) {
   return body;
 }
 
-/** =======================
- *  LISTAR COMENTARIOS
- *  ======================= */
-// Conserva la firma original por postId (GET /comments?postId=...)
 export async function listComments(postId: string): Promise<CommentModel[]> {
   const url = `${API_URL}/comments?postId=${encodeURIComponent(postId)}`;
   const res = await fetch(url, { method: "GET" });
   const data = await jsonOrThrow(res);
-  // Ajusta si tu API envía {items: CommentModel[]} u otro envoltorio
   return Array.isArray(data) ? data as CommentModel[] : (data?.items ?? []);
 }
 
-// Helper por slug (GET /comments?slugPost=...)
 export async function listCommentsBySlug(slugPost: string): Promise<CommentModel[]> {
   const url = `${API_URL}/comments?slugPost=${encodeURIComponent(slugPost)}`;
   const res = await fetch(url, { method: "GET" });
@@ -48,36 +41,25 @@ export async function listCommentsBySlug(slugPost: string): Promise<CommentModel
   return Array.isArray(data) ? data as CommentModel[] : (data?.items ?? []);
 }
 
-/** =======================
- *  CREAR COMENTARIO
- *  ======================= */
-// Según tu Swagger: POST /comments  body: { content, slugPost, idPost? }
-// Hacemos idPost opcional y priorizamos slugPost como pediste.
 export async function addComment(args: {
   content: string;
-  slugPost: string;   // requerido en tu caso
-  idPost?: string;    // opcional
+  slugPost: string;
+  idPost?: string;
 }): Promise<CommentModel | void> {
   const res = await fetch(`${API_URL}/comments`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    // credentials: "include", // quita/activa si tu API usa cookies
+    credentials: "include",
     body: JSON.stringify({
       content: args.content,
       slugPost: args.slugPost,
       ...(args.idPost ? { idPost: args.idPost } : {}),
     }),
   });
-  // Si tu API devuelve el comentario creado, lo retornamos.
   const data = await jsonOrThrow(res);
   return data as CommentModel;
 }
 
-/** =======================
- *  ACTUALIZAR COMENTARIO
- *  ======================= */
-// PUT /comments/:id  body: { content }
-// (ajusta a PATCH si tu API lo define así)
 export async function editComment(id: string, content: string): Promise<CommentModel | void> {
   const res = await fetch(`${API_URL}/comments/${encodeURIComponent(id)}`, {
     method: "PUT",
@@ -88,10 +70,6 @@ export async function editComment(id: string, content: string): Promise<CommentM
   return data as CommentModel;
 }
 
-/** =======================
- *  ELIMINAR COMENTARIO
- *  ======================= */
-// DELETE /comments/:id
 export async function deleteComment(id: string): Promise<void> {
   const res = await fetch(`${API_URL}/comments/${encodeURIComponent(id)}`, {
     method: "DELETE",
