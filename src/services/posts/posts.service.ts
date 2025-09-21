@@ -4,6 +4,28 @@ import * as Q from "./posts.graphql";
 /** === Tipos GQL crudos === */
 type GQLTag = { name: string; slug: string };
 type GQLBanner = { key: string; url: string };
+type GQLCategory = { name: string; slug: string; description?: string | null };
+
+export type AdminComment = { id: string; name: string; text: string; ts: number };
+
+type GQLComment = {
+  id: string | number;
+  content: string;
+  isModerated?: boolean | null;
+  authorName?: string | null;
+  authorEmail?: string | null;
+  createdAt?: string | null;
+};
+
+function mapComments(arr?: GQLComment[] | null): AdminComment[] {
+  if (!arr?.length) return [];
+  return arr.map((c, i) => ({
+    id: String(c.id),
+    name: (c.authorName ?? "").trim() || "Anónimo",
+    text: c.content || "",
+    ts: c.createdAt ? Date.parse(c.createdAt) : (Date.now() - i), // usa fecha real
+  }));
+}
 
 type GQLPost = {
   id: string | number;
@@ -13,11 +35,12 @@ type GQLPost = {
   seoMeta?: Record<string, unknown> | string | null;
   publishedAt?: string | null;
   summary?: string | null;
-  banners?: unknown;                    // <- era GQLBanner[] | null
+  banners?: unknown;
   tags?: GQLTag[] | null;
+  category?: GQLCategory | null;
+  comments?: GQLComment[] | null;
 };
 
-/** === Tipo mapeado para la UI/Admin === */
 export type AdminPost = {
   id: string;
   title: string;
@@ -26,11 +49,13 @@ export type AdminPost = {
   cover: string;
   tags: string[];
   content: string;
-  status: "draft" | "published" | "archived"; // seguimos soportando, pero lo calculamos
-  date: string; // YYYY-MM-DD
+  status: "draft" | "published" | "archived";
+  date: string;
+  comments?: AdminComment[];
 };
 
-/** === Utils === */
+export type AdminCategory = { name: string; slug: string; description?: string | null };
+
 export function slugify(s: string) {
   return (s || "")
     .toLowerCase()
@@ -126,7 +151,9 @@ function pickAllowed(params?: ListParams): Partial<Record<AllowedKey, any>> {
   if (!params) return {};
   const out: Partial<Record<AllowedKey, any>> = {};
   for (const k of ALLOWED_KEYS) {
-    const v = (params as any)[k];
+    let v = (params as any)[k];
+    if (Array.isArray(v)) v = v.filter(x => x != null && String(x).trim() !== "");
+    if (v === "") v = undefined;
     if (v !== undefined && v !== null && !(Array.isArray(v) && v.length === 0)) {
       out[k] = v;
     }
@@ -149,7 +176,12 @@ export async function getPost(id: string): Promise<AdminPost | null> {
 export async function getPostBySlug(slug: string): Promise<AdminPost | null> {
   const data = await exec<{ posts: unknown }>(Q.GET_POST_BY_SLUG, { slug });
   const arr = unwrapArray<GQLPost>(data, "posts");
-  return arr.length ? mapToAdmin(arr[0]) : null;
+  if (!arr.length) return null;
+
+  const base = mapToAdmin(arr[0]);
+  const comments = mapComments(arr[0].comments);
+
+  return { ...base, comments };
 }
 
 export async function upsertPost(p: AdminPost & {
@@ -200,4 +232,38 @@ export async function listRecentForCards(limit = 6) {
     tags: p.tags,
     date: p.date,
   }));
+}
+
+export async function listCategories(): Promise<AdminCategory[]> {
+  // 1) Intento top-level (puede NO existir en tu schema)
+  try {
+    const data = await exec<{ categories: AdminCategory[] }>(Q.LIST_CATEGORIES);
+    const cats = data?.categories ?? [];
+    if (cats.length) return cats;
+  } catch (e) {
+    // Importante: NO relances el error. Este catch evita que se caiga la página.
+    console.warn("[listCategories] Query.categories no existe en el schema:", (e as Error)?.message);
+  }
+
+  // 2) Fallback: deduplicar desde posts(category)
+  const dedup = new Map<string, AdminCategory>();
+
+  // Puedes filtrar por status si quieres limitar.
+  const data2 = await exec<{ posts: { category?: AdminCategory | null }[] }>(
+    Q.LIST_POSTS_ONLY_CATEGORIES,
+    { status: "published" }
+  );
+
+  for (const p of data2?.posts ?? []) {
+    const c = p?.category;
+    if (c?.slug && !dedup.has(c.slug)) {
+      dedup.set(c.slug, {
+        name: c.name,
+        slug: c.slug,
+        description: c.description ?? null,
+      });
+    }
+  }
+
+  return Array.from(dedup.values());
 }

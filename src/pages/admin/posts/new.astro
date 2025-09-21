@@ -1,8 +1,11 @@
 ---
 import { AdminLayout } from "@/layouts";
 import { PostForm } from "@/components";
+import { listCategories } from "@/services";
+
+const categories = await listCategories();
 ---
 
 <AdminLayout title="Nueva publicación">
-  <PostForm client:load mode="create" />
+  <PostForm client:load mode="create" categories={categories} />
 </AdminLayout>

@@ -1,5 +1,5 @@
-import { gqlFetch } from "@/lib/graphql";
-import * as Q from "./comments.graphql";
+// src/services/comments.service.ts
+import { API_BASE } from "@/lib/endpoints";
 
 export type CommentUser = { id: string; name: string; avatar?: string | null };
 export type CommentModel = {
@@ -12,22 +12,89 @@ export type CommentModel = {
   updatedAt?: string | null;
 };
 
+const API_URL =
+  import.meta.env.PUBLIC_API_URL ??
+  import.meta.env.PUBLIC_API_BASE ??
+  API_BASE;
+
+/** Utils */
+async function jsonOrThrow(res: Response) {
+  let body: any = null;
+  try { body = await res.json(); } catch { /* ignore */ }
+  if (!res.ok) {
+    const msg = body?.message || body?.error || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return body;
+}
+
+/** =======================
+ *  LISTAR COMENTARIOS
+ *  ======================= */
+// Conserva la firma original por postId (GET /comments?postId=...)
 export async function listComments(postId: string): Promise<CommentModel[]> {
-  const data = await gqlFetch<{ comments: CommentModel[] }>(Q.LIST_COMMENTS, { postId });
-  return data.comments ?? [];
+  const url = `${API_URL}/comments?postId=${encodeURIComponent(postId)}`;
+  const res = await fetch(url, { method: "GET" });
+  const data = await jsonOrThrow(res);
+  // Ajusta si tu API envía {items: CommentModel[]} u otro envoltorio
+  return Array.isArray(data) ? data as CommentModel[] : (data?.items ?? []);
 }
 
-export async function addComment(args: { postId: string; content: string; parentId?: string | null }) {
-  const input = { postId: args.postId, content: args.content, parentId: args.parentId ?? null };
-  const data = await gqlFetch<{ createComment: CommentModel }>(Q.CREATE_COMMENT, { input });
-  return data.createComment;
+// Helper por slug (GET /comments?slugPost=...)
+export async function listCommentsBySlug(slugPost: string): Promise<CommentModel[]> {
+  const url = `${API_URL}/comments?slugPost=${encodeURIComponent(slugPost)}`;
+  const res = await fetch(url, { method: "GET" });
+  const data = await jsonOrThrow(res);
+  return Array.isArray(data) ? data as CommentModel[] : (data?.items ?? []);
 }
 
-export async function editComment(id: string, content: string) {
-  const data = await gqlFetch<{ updateComment: CommentModel }>(Q.UPDATE_COMMENT, { id, content });
-  return data.updateComment;
+/** =======================
+ *  CREAR COMENTARIO
+ *  ======================= */
+// Según tu Swagger: POST /comments  body: { content, slugPost, idPost? }
+// Hacemos idPost opcional y priorizamos slugPost como pediste.
+export async function addComment(args: {
+  content: string;
+  slugPost: string;   // requerido en tu caso
+  idPost?: string;    // opcional
+}): Promise<CommentModel | void> {
+  const res = await fetch(`${API_URL}/comments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    // credentials: "include", // quita/activa si tu API usa cookies
+    body: JSON.stringify({
+      content: args.content,
+      slugPost: args.slugPost,
+      ...(args.idPost ? { idPost: args.idPost } : {}),
+    }),
+  });
+  // Si tu API devuelve el comentario creado, lo retornamos.
+  const data = await jsonOrThrow(res);
+  return data as CommentModel;
 }
 
-export async function deleteComment(id: string) {
-  await gqlFetch(Q.DELETE_COMMENT, { id });
+/** =======================
+ *  ACTUALIZAR COMENTARIO
+ *  ======================= */
+// PUT /comments/:id  body: { content }
+// (ajusta a PATCH si tu API lo define así)
+export async function editComment(id: string, content: string): Promise<CommentModel | void> {
+  const res = await fetch(`${API_URL}/comments/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  const data = await jsonOrThrow(res);
+  return data as CommentModel;
+}
+
+/** =======================
+ *  ELIMINAR COMENTARIO
+ *  ======================= */
+// DELETE /comments/:id
+export async function deleteComment(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/comments/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  await jsonOrThrow(res);
 }

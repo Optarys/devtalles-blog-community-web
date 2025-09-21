@@ -42,7 +42,7 @@ export const GET_POST_BY_ID = gql`
       content
       seoMeta
       publishedAt
-      banners           # <- JSON, sin subcampos
+      banners
       category { name slug description }
       tags { name slug }
     }
@@ -60,9 +60,17 @@ export const GET_POST_BY_SLUG = gql`
       content
       seoMeta
       publishedAt
-      banners           # <- JSON, sin subcampos
+      banners
       category { name slug description }
       tags { name slug }
+      comments {
+        id
+        content
+        isModerated
+        authorName
+        authorEmail
+        createdAt
+      }
     }
   }
 `;
@@ -90,6 +98,24 @@ export const TOGGLE_POST_STATUS = gql`
     togglePostStatus(id: $id) {
       id
       publishedAt
+    }
+  }
+`;
+
+export const LIST_CATEGORIES = gql`
+  query ListCategories {
+    categories {
+      name
+      slug
+      description
+    }
+  }
+`;
+
+export const LIST_POSTS_ONLY_CATEGORIES = gql`
+  query ListPostsOnlyCategories($status: String) {
+    posts(status: $status) {
+      category { name slug description }
     }
   }
 `;

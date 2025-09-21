@@ -23,6 +23,8 @@ export async function getStaticPaths() {
 const { slug } = Astro.params as { slug: string };
 if (!slug) return new Response("Not found", { status: 404 });
 
+let initialComments: { id: string; name: string; text: string; ts: number }[] = [];
+
 let title = "";
 let date = "";
 let publishedIso: string | null = null;
@@ -64,6 +66,8 @@ try {
     if (idx < all.length - 1) prev = { slug: all[idx + 1].slug, title: all[idx + 1].title };
     if (idx > 0)              next = { slug: all[idx - 1].slug, title: all[idx - 1].title };
   }
+
+  initialComments = post.comments ?? [];
 } catch (e) {
   console.error("[Blog/detail] GraphQL falló:", e);
 }
@@ -150,7 +154,7 @@ const articleJsonLd = {
           </div>
 
           <div class="mt-10">
-            <Comments client:visible slug={slug} />
+            <Comments client:visible slug={slug} initialComments={initialComments} />
           </div>
 
           {(prev || next) && (
