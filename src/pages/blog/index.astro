@@ -32,7 +32,10 @@ let list: {
 }[] = [];
 
 try {
-  const rsp = await getAllPosts({ status: "published", orderBy: "publishedAt:desc" });
+  const rsp = await getAllPosts({
+    status: "published",
+    orderBy: "publishedAt:desc",
+  });
   list = rsp.map((p) => ({
     title: p.title,
     slug: p.slug,
@@ -48,10 +51,10 @@ try {
 if (list.length === 0) {
   const all = await getCollection(
     "posts",
-    ({ data }) => data.published !== false,
+    ({ data }) => data.published !== false
   );
   all.sort(
-    (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime(),
+    (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
   );
   list = all.map((p) => ({
     title: p.data.title,
@@ -116,7 +119,7 @@ function clearFiltersHref() {
 <RootLayout title="Blog" description="Artículos técnicos de la comunidad">
   <TopNav client:load />
 
-  <section
+  <!-- <section
     class="section relative bg-gradient-to-b from-[var(--surface-0)] to-[var(--surface-1)]"
   >
     <div class="absolute inset-0 -z-10 bg-grid"></div>
@@ -174,7 +177,7 @@ function clearFiltersHref() {
         )
       }
     </div>
-  </section>
+  </section> -->
 
   <!-- Hero / Header -->
   <header
@@ -318,7 +321,7 @@ function clearFiltersHref() {
                     >
                       {n}
                     </a>
-                  ),
+                  )
                 )}
                 <a
                   class={`rounded-md border px-3 py-1 ${page < totalPages ? "border-white/10 bg-white/5 hover:bg-white/10" : "pointer-events-none border-white/5 opacity-50"}`}
