@@ -2,13 +2,21 @@
 import { RootLayout } from "@/layouts";
 import { TopNav, FooterSimple, SectionDivider } from "@/components/ui";
 import { Hero, PostList, Features, Mascot, CTA } from "@/components/sections";
+import TopicsRail from "@/components/sections/TopicsRail.astro";
+import FeaturedPosts from "@/components/sections/FeaturedPosts.astro";
+
+const API_URL =
+  import.meta.env.PUBLIC_API_URL ??
+  "https://optarys-devtalles-blog-api.onrender.com";
+const DEFAULT_NEXT = "/admin";
 ---
 
 <RootLayout title="Inicio">
   <TopNav currentPath={Astro.url.pathname} client:load />
 
   <Hero />
-
+  <TopicsRail />
+  <FeaturedPosts />
   <PostList />
 
   <SectionDivider />
@@ -72,3 +80,4 @@ import { Hero, PostList, Features, Mascot, CTA } from "@/components/sections";
   window.__dtRefreshUser = refreshFromCookie;
 })();
 </script>
+

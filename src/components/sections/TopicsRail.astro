@@ -1,0 +1,47 @@
+---
+import { getAllPosts, type AdminPost } from "@/services";
+
+const posts: AdminPost[] = await getAllPosts({ status: "published" }).catch(
+  () => []
+);
+const count = new Map<string, number>();
+for (const p of posts)
+  for (const t of p.tags ?? []) count.set(t, (count.get(t) ?? 0) + 1);
+const tags = Array.from(count.entries())
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 12);
+---
+
+{
+  tags.length ? (
+    <section class="bg-[var(--surface-1)]">
+      <div class="mx-auto max-w-6xl px-6 py-6">
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-[var(--color-title)]">
+            Tendencias
+          </h2>
+          <a
+            href="/blog/"
+            class="text-xs text-[var(--color-accent)] hover:underline"
+          >
+            Ver todo
+          </a>
+        </div>
+
+        <div class="flex gap-2 overflow-x-auto pb-1">
+          {tags.map(([name, n]) => (
+            <a
+              href={`/blog/?tag=${encodeURIComponent(name)}`}
+              class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[var(--color-text)] hover:bg-white/10"
+            >
+              #{name}{" "}
+              <span class="rounded-full bg-white/10 px-2 py-[2px] text-[10px]">
+                {n}
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  ) : null
+}

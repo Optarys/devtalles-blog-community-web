@@ -1,88 +1,89 @@
 ---
-const API_URL = import.meta.env.PUBLIC_API_URL;
+const API_BASE = (import.meta.env.PUBLIC_API_URL ?? "").replace(/\/+$/, "");
+
 const url = new URL(Astro.request.url);
 const next = url.searchParams.get("next") ?? "/";
+const debug = url.searchParams.get("debug") === "1";
+
+const token = Astro.cookies.get("jwt")?.value ?? "";
+
+let resStatus: number | null = null;
+let resBody: any = null;
+let user: any = null;
+
+// Intenta REST /auth/me con Authorization: Bearer <jwt>
+if (API_BASE && token) {
+  try {
+    const r = await fetch(`${API_BASE}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    resStatus = r.status;
+    const text = await r.text();
+    try {
+      resBody = JSON.parse(text);
+    } catch {
+      resBody = text;
+    }
+    // Ajusta según estructura que devuelva tu /auth/me
+    user = (resBody && (resBody.user || resBody)) || null;
+  } catch (e) {
+    resBody = String(e);
+  }
+}
+
+const ok = !!user;
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Autenticando…</title>
-  </head>
-  <body>
-    <script type="module">
-      const COOKIE_NAME = "jwt";
-      const API_URL = import.meta.env.PUBLIC_API_URL;
-
-      const getCookie = (name) => {
-        const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-        return m ? decodeURIComponent(m[1]) : null;
-      };
-
-      (async () => {
-        const params = new URLSearchParams(location.search);
-        const next = params.get("next") || "/";
-
-        const tokenInUrl = params.get("token");
-        if (tokenInUrl) {
-          sessionStorage.setItem("auth_token", tokenInUrl);
-          try {
-            const r = await fetch(`${API_URL}/auth/me`, {
-              headers: { Authorization: `Bearer ${tokenInUrl}` },
-              credentials: "include",
-            });
-            if (r.ok) {
-              const me = await r.json();
-              sessionStorage.setItem("auth_user", JSON.stringify(me));
-            }
-          } catch {}
-          location.replace(next);
-          return;
-        }
-
-        const code = params.get("code");
-        const state = params.get("state");
-        if (code) {
-          try {
-            const url = new URL(`${API_URL}/auth/oauth2/callback`);
-            url.searchParams.set("code", code);
-            if (state) url.searchParams.set("state", state);
-
-            const resp = await fetch(url.toString(), {
-              method: "GET",
-              credentials: "include",
-            });
-
-            if (!resp.ok) throw new Error("Callback failed");
-
-            const cookieToken = getCookie(COOKIE_NAME);
-            if (cookieToken) {
-              sessionStorage.setItem("auth_token", cookieToken);
-            }
-
-            try {
-              const meRes = await fetch(`${API_URL}/auth/me`, {
-                credentials: "include",
-                headers: cookieToken
-                  ? { Authorization: `Bearer ${cookieToken}` }
-                  : {},
-              });
-              if (meRes.ok) {
-                const me = await meRes.json();
-                sessionStorage.setItem("auth_user", JSON.stringify(me));
-              }
-            } catch {}
-
-            location.replace(next);
-          } catch (err) {
-            console.error(err);
-            location.replace("/auth/login?error=oauth_callback_failed");
-          }
-          return;
-        }
-
-        location.replace("/auth/login");
-      })();
-    </script>
+<!doctype html>
+<html>
+  <head><meta charset="utf-8" /><title>Callback</title></head>
+  <body
+    style="font-family:system-ui;max-width:720px;margin:40px auto;padding:16px"
+  >
+    {
+      ok ? (
+        <>
+          <h1>✅ Sesión iniciada</h1>
+          <p>
+            Hola {user.firstName ?? user.username ?? user.email}. Redirigiendo…
+          </p>
+          <p>
+            <a href={next}>Continuar</a>
+          </p>
+          <script is:inline>
+            {" "}
+            setTimeout(()=>location.replace("{next}"), 900);{" "}
+          </script>
+        </>
+      ) : (
+        <>
+          <h1>⚠️ No hay sesión</h1>
+          <ul>
+            <li>
+              <strong>Tiene cookie jwt:</strong> {String(!!token)}
+            </li>
+            <li>
+              <strong>API_BASE:</strong> {API_BASE || "(vacío)"}
+            </li>
+            <li>
+              <strong>Respuesta /auth/me:</strong>{" "}
+              {resStatus ?? "(sin llamada)"}
+            </li>
+          </ul>
+          {debug && (
+            <pre style="white-space:pre-wrap;background:#111;color:#eee;padding:12px;border-radius:8px">
+              {JSON.stringify(
+                { tokenPresent: !!token, resStatus, resBody },
+                null,
+                2
+              )}
+            </pre>
+          )}
+          <p>
+            <a href="/auth/login">Ir a iniciar sesión</a>
+          </p>
+        </>
+      )
+    }
   </body>
 </html>
