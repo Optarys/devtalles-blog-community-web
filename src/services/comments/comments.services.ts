@@ -1,5 +1,6 @@
-// src/services/comments.service.ts
 import { API_BASE } from "@/lib/endpoints";
+import { gqlFetch } from "@/lib/graphql";
+import * as Q from "./comments.graphql";
 
 export type CommentUser = { id: string; name: string; avatar?: string | null };
 export type CommentModel = {
@@ -19,26 +20,9 @@ const API_URL =
 
 async function jsonOrThrow(res: Response) {
   let body: any = null;
-  try { body = await res.json(); } catch { /* ignore */ }
-  if (!res.ok) {
-    const msg = body?.message || body?.error || `HTTP ${res.status}`;
-    throw new Error(msg);
-  }
+  try { body = await res.json(); } catch {}
+  if (!res.ok) throw new Error(body?.message || body?.error || `HTTP ${res.status}`);
   return body;
-}
-
-export async function listComments(postId: string): Promise<CommentModel[]> {
-  const url = `${API_URL}/comments?postId=${encodeURIComponent(postId)}`;
-  const res = await fetch(url, { method: "GET" });
-  const data = await jsonOrThrow(res);
-  return Array.isArray(data) ? data as CommentModel[] : (data?.items ?? []);
-}
-
-export async function listCommentsBySlug(slugPost: string): Promise<CommentModel[]> {
-  const url = `${API_URL}/comments?slugPost=${encodeURIComponent(slugPost)}`;
-  const res = await fetch(url, { method: "GET" });
-  const data = await jsonOrThrow(res);
-  return Array.isArray(data) ? data as CommentModel[] : (data?.items ?? []);
 }
 
 export async function addComment(args: {
@@ -60,7 +44,7 @@ export async function addComment(args: {
   return data as CommentModel;
 }
 
-export async function editComment(id: string, content: string): Promise<CommentModel | void> {
+/* export async function editComment(id: string, content: string): Promise<CommentModel | void> {
   const res = await fetch(`${API_URL}/comments/${encodeURIComponent(id)}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -68,11 +52,43 @@ export async function editComment(id: string, content: string): Promise<CommentM
   });
   const data = await jsonOrThrow(res);
   return data as CommentModel;
+} */
+
+export async function deleteComment(id: string | number): Promise<{ success: boolean; message?: string; commentId?: number }> {
+  const res = await fetch(`${API_URL}/comments/${encodeURIComponent(String(id))}`, {
+    method: "DELETE",
+    headers: { "Accept": "application/json" },
+    credentials: "include",
+  });
+  const data = await jsonOrThrow(res);
+  return data as { success: boolean; message?: string; commentId?: number };
 }
 
-export async function deleteComment(id: string): Promise<void> {
-  const res = await fetch(`${API_URL}/comments/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-  });
-  await jsonOrThrow(res);
+export type ClientComment = { id: string; name: string; text: string; ts: number };
+
+type GQLComment = {
+  id: string | number;
+  content: string;
+  authorName?: string | null;
+  createdAt?: string | null;
+};
+
+function map(arr?: GQLComment[] | null): ClientComment[] {
+  if (!arr?.length) return [];
+  return arr.map((c, i) => ({
+    id: String(c.id),
+    name: (c.authorName ?? "").trim() || "Anónimo",
+    text: c.content || "",
+    ts: c.createdAt ? Date.parse(c.createdAt) : (Date.now() - i),
+  }));
+}
+
+export async function listCommentsByGraphSlug(slug: string): Promise<ClientComment[]> {
+  const rsp = await gqlFetch<{ posts: Array<{ comments?: GQLComment[] | null }> }>(
+    Q.GET_COMMENTS_BY_SLUG,
+    { slug }
+  );
+
+  const posts = rsp?.posts ?? [];
+  return map(posts[0]?.comments);
 }

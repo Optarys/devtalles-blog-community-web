@@ -31,7 +31,6 @@ export const LIST_POSTS = gql`
   }
 `;
 
-/** GET by ID */
 export const GET_POST_BY_ID = gql`
   query PostById($id: ID!) {
     post(id: $id) {
@@ -49,7 +48,6 @@ export const GET_POST_BY_ID = gql`
   }
 `;
 
-/** GET by slug (público) */
 export const GET_POST_BY_SLUG = gql`
   query PostBySlug($slug: String!) {
     posts(slug: $slug) {
@@ -75,7 +73,6 @@ export const GET_POST_BY_SLUG = gql`
   }
 `;
 
-/** UPSERT */
 export const UPSERT_POST = gql`
   mutation UpsertPost($input: PostInput!) {
     upsertPost(input: $input) {
@@ -85,14 +82,12 @@ export const UPSERT_POST = gql`
   }
 `;
 
-/** DELETE */
 export const DELETE_POST = gql`
   mutation DeletePost($id: ID!) {
     deletePost(id: $id)
   }
 `;
 
-/** TOGGLE status */
 export const TOGGLE_POST_STATUS = gql`
   mutation TogglePostStatus($id: ID!) {
     togglePostStatus(id: $id) {

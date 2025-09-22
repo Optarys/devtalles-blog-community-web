@@ -98,7 +98,6 @@ try {
 
   initialComments = post.comments ?? [];
 
-  // HEADINGS: se derivan localmente desde el HTML (no tocamos servicios/types)
   html = ensureHeadingIds(html);
   headings = extractHeadings(html);
 } catch (e) {
