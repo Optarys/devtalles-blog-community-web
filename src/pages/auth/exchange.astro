@@ -1,0 +1,52 @@
+---
+const API_BASE = (import.meta.env.PUBLIC_API_URL ?? "").replace(/\/+$/, "");
+const url = new URL(Astro.request.url);
+const code = url.searchParams.get("code");
+const next = url.searchParams.get("next") ?? "/";
+---
+<!doctype html>
+<html>
+  <head><meta charset="utf-8" /><title>Intercambiando código…</title></head>
+  <body>
+    <p>Procesando autenticación…</p>
+
+    <!-- 1) Embebe variables del server como JSON puro -->
+    <script type="application/json" id="env">
+      {JSON.stringify({ API: API_BASE, next })}
+    </script>
+
+    <!-- 2) Lee el JSON, hace exchange, guarda en LS y redirige -->
+    <script is:inline>
+      (async () => {
+        try {
+          const envEl = document.getElementById("env");
+          const ENV = envEl ? JSON.parse(envEl.textContent || "{}") : {};
+          const API = ENV.API || "";
+          const search = new URLSearchParams(location.search);
+
+          const code = search.get("code");
+          const next = ENV.next || search.get("next") || "/";
+
+          if (!code) return location.replace("/auth/login?error=falta_code");
+
+          const res = await fetch(`${API}/auth/oauth2/exchange?code=${encodeURIComponent(code)}`, {
+            credentials: "include",
+            headers: { Accept: "application/json" }
+          });
+          if (!res.ok) throw new Error("exchange_failed");
+
+          const data = await res.json(); // { email, username, roles }
+          localStorage.setItem("dt:user", JSON.stringify({
+            email: data?.email ?? "",
+            username: data?.username ?? data?.email ?? "",
+            roles: Array.isArray(data?.roles) ? data.roles : []
+          }));
+
+          location.replace(next);
+        } catch (e) {
+          location.replace("/auth/login?error=" + encodeURIComponent(e?.message || "Error en exchange"));
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -196,3 +196,33 @@ export async function suggestUniqueSlug(title: string): Promise<string> {
   while (await getPostBySlug(candidate)) candidate = `${base}-${i++}`;
   return candidate;
 }
+
+export async function listCategories(): Promise<AdminCategory[]> {
+  try {
+    const data = await exec<{ categories: AdminCategory[] }>(Q.LIST_CATEGORIES);
+    const cats = data?.categories ?? [];
+    if (cats.length) return cats;
+  } catch (e) {
+    console.warn("[listCategories] Query.categories no existe en el schema:", (e as Error)?.message);
+  }
+
+  const dedup = new Map<string, AdminCategory>();
+
+  const data2 = await exec<{ posts: { category?: AdminCategory | null }[] }>(
+    Q.LIST_POSTS_ONLY_CATEGORIES,
+    { status: "published" }
+  );
+
+  for (const p of data2?.posts ?? []) {
+    const c = p?.category;
+    if (c?.slug && !dedup.has(c.slug)) {
+      dedup.set(c.slug, {
+        name: c.name,
+        slug: c.slug,
+        description: c.description ?? null,
+      });
+    }
+  }
+
+  return Array.from(dedup.values());
+}

@@ -11,7 +11,6 @@ let resStatus: number | null = null;
 let resBody: any = null;
 let user: any = null;
 
-// Intenta REST /auth/me con Authorization: Bearer <jwt>
 if (API_BASE && token) {
   try {
     const r = await fetch(`${API_BASE}/auth/me`, {
@@ -19,12 +18,7 @@ if (API_BASE && token) {
     });
     resStatus = r.status;
     const text = await r.text();
-    try {
-      resBody = JSON.parse(text);
-    } catch {
-      resBody = text;
-    }
-    // Ajusta según estructura que devuelva tu /auth/me
+    try { resBody = JSON.parse(text); } catch { resBody = text; }
     user = (resBody && (resBody.user || resBody)) || null;
   } catch (e) {
     resBody = String(e);
@@ -37,51 +31,58 @@ const ok = !!user;
 <!doctype html>
 <html>
   <head><meta charset="utf-8" /><title>Callback</title></head>
-  <body
-    style="font-family:system-ui;max-width:720px;margin:40px auto;padding:16px"
-  >
+  <body style="font-family:system-ui;max-width:720px;margin:40px auto;padding:16px">
     {
       ok ? (
         <>
           <h1>✅ Sesión iniciada</h1>
-          <p>
-            Hola {user.firstName ?? user.username ?? user.email}. Redirigiendo…
-          </p>
-          <p>
-            <a href={next}>Continuar</a>
-          </p>
+          <p>Hola {user.firstName ?? user.username ?? user.email}. Redirigiendo…</p>
+          <p><a href={next}>Continuar</a></p>
+
+          <script type="application/json" id="boot">
+            {JSON.stringify({
+              user: {
+                email: user?.email ?? "",
+                username: user?.username ?? user?.firstName ?? user?.email ?? "",
+                roles: Array.isArray(user?.roles) ? user.roles : []
+              },
+              next
+            })}
+          </script>
+
           <script is:inline>
-            {" "}
-            setTimeout(()=>location.replace("{next}"), 900);{" "}
+            (() => {
+              try {
+                const bootEl = document.getElementById("boot");
+                const BOOT = bootEl ? JSON.parse(bootEl.textContent || "{}") : { user: null, next: "/" };
+                if (BOOT?.user) {
+                  localStorage.setItem("dt:user", JSON.stringify(BOOT.user));
+                }
+                const dest = typeof BOOT?.next === "string" && BOOT.next ? BOOT.next : "/";
+                setTimeout(() => location.replace(dest), 900);
+              } catch {
+                // si algo falla, vuelve al home
+                location.replace("/");
+              }
+            })();
           </script>
         </>
       ) : (
         <>
           <h1>⚠️ No hay sesión</h1>
           <ul>
-            <li>
-              <strong>Tiene cookie jwt:</strong> {String(!!token)}
-            </li>
-            <li>
-              <strong>API_BASE:</strong> {API_BASE || "(vacío)"}
-            </li>
-            <li>
-              <strong>Respuesta /auth/me:</strong>{" "}
-              {resStatus ?? "(sin llamada)"}
-            </li>
+            <li><strong>Tiene cookie jwt:</strong> {String(!!token)}</li>
+            <li><strong>API_BASE:</strong> {API_BASE || "(vacío)"}</li>
+            <li><strong>Respuesta /auth/me:</strong> {resStatus ?? "(sin llamada)"}</li>
           </ul>
+
           {debug && (
             <pre style="white-space:pre-wrap;background:#111;color:#eee;padding:12px;border-radius:8px">
-              {JSON.stringify(
-                { tokenPresent: !!token, resStatus, resBody },
-                null,
-                2
-              )}
+              {JSON.stringify({ tokenPresent: !!token, resStatus, resBody }, null, 2)}
             </pre>
           )}
-          <p>
-            <a href="/auth/login">Ir a iniciar sesión</a>
-          </p>
+
+          <p><a href="/auth/login">Ir a iniciar sesión</a></p>
         </>
       )
     }
