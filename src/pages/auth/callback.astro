@@ -1,17 +1,9 @@
 ---
-/**
- * 1) Intenta leer cookie NO-HttpOnly temporal `dt_user` (puesta por /api/auth/login o /auth/exchange).
- * 2) Si no existe, decodifica JWT (cookie HttpOnly `jwt`) para armar {email, username, roles}.
- * 3) Embebe el objeto y lo guarda en localStorage, luego redirige a `next`.
- */
 const url = new URL(Astro.request.url);
 const next = url.searchParams.get("next") ?? "/";
-const debug = url.searchParams.get("debug") === "1";
-
 const jwt = Astro.cookies.get("jwt")?.value ?? "";
 const dtUserRaw = Astro.cookies.get("dt_user")?.value ?? "";
 
-// Helpers
 function b64urlToB64(s: string) {
   s = s.replace(/-/g, "+").replace(/_/g, "/");
   const pad = s.length % 4;
@@ -19,9 +11,7 @@ function b64urlToB64(s: string) {
 }
 
 let user: { email?: string; username?: string; roles?: string[] } | null = null;
-let debugInfo: any = {};
 
-// 1) Prioriza cookie temporal dt_user (puesta en login/exchange)
 if (dtUserRaw) {
   try {
     const json = Buffer.from(dtUserRaw, "base64").toString("utf8");
@@ -31,19 +21,16 @@ if (dtUserRaw) {
       username: parsed?.username ?? parsed?.email ?? "",
       roles: Array.isArray(parsed?.roles) ? parsed.roles : [],
     };
-    debugInfo.dt_user = "used";
-  } catch (e) {
-    debugInfo.dt_user_error = String(e);
-  }
+  } catch {}
 }
 
-// 2) Fallback: decodifica payload del JWT si no hubo dt_user
 if (!user && jwt) {
   try {
     const parts = jwt.split(".");
     if (parts.length >= 2) {
-      const payloadJson = Buffer.from(b64urlToB64(parts[1]), "base64").toString("utf8");
-      const payload = JSON.parse(payloadJson);
+      const payload = JSON.parse(
+        Buffer.from(b64urlToB64(parts[1]), "base64").toString("utf8")
+      );
       user = {
         email: payload.email ?? payload.sub ?? "",
         username:
@@ -52,17 +39,10 @@ if (!user && jwt) {
           payload.preferred_username ??
           payload.sub ??
           "",
-        roles: Array.isArray(payload.roles)
-          ? payload.roles
-          : payload.role
-          ? [payload.role]
-          : [],
+        roles: Array.isArray(payload.roles) ? payload.roles : (payload.role ? [payload.role] : []),
       };
-      debugInfo.jwt_payload = payload;
     }
-  } catch (e) {
-    debugInfo.jwt_decode_error = String(e);
-  }
+  } catch {}
 }
 
 const ok = !!(user && (user.username || user.email));
@@ -70,56 +50,32 @@ const ok = !!(user && (user.username || user.email));
 
 <!doctype html>
 <html>
-  <head><meta charset="utf-8" /><title>Callback</title></head>
-  <body style="font-family:system-ui;max-width:720px;margin:40px auto;padding:16px">
-    {
-      ok ? (
-        <>
-          <h1>✅ Sesión iniciada</h1>
-          <p>Hola {user!.username || user!.email}. Redirigiendo…</p>
-          <p><a href={next}>Continuar</a></p>
-
-          <!-- Embebo user + next como JSON -->
-          <script type="application/json" id="boot">
-            {JSON.stringify({ user, next })}
-          </script>
-
-          <!-- Guarda en localStorage y redirige; también borra la cookie temporal dt_user -->
-          <script is:inline>
-            (() => {
-              try {
-                const bootEl = document.getElementById("boot");
-                const BOOT = bootEl ? JSON.parse(bootEl.textContent || "{}") : {};
-                if (BOOT?.user) {
-                  localStorage.setItem("dt:user", JSON.stringify(BOOT.user));
-                }
-                // borra cookie temporal dt_user (si existiera)
-                document.cookie = "dt_user=; Max-Age=0; Path=/; SameSite=Lax";
-                const dest = (typeof BOOT?.next === "string" && BOOT.next) ? BOOT.next : "/";
-                setTimeout(() => location.replace(dest), 400);
-              } catch {
-                location.replace("/");
-              }
-            })();
-          </script>
-        </>
-      ) : (
-        <>
-          <h1>⚠️ No hay sesión</h1>
-          <ul>
-            <li><strong>Tiene cookie jwt:</strong> {String(!!jwt)}</li>
-            <li><strong>Tiene cookie dt_user:</strong> {String(!!dtUserRaw)}</li>
-          </ul>
-
-          {debug && (
-            <pre style="white-space:pre-wrap;background:#111;color:#eee;padding:12px;border-radius:8px">
-{JSON.stringify(debugInfo, null, 2)}
-            </pre>
-          )}
-
-          <p><a href="/auth/login">Ir a iniciar sesión</a></p>
-        </>
-      )
-    }
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /></head>
+  <body style="background:#000; color:#000"> <!-- invisible -->
+    <script type="application/json" id="boot">
+      {JSON.stringify({ user, next, ok })}
+    </script>
+    <script is:inline>
+      (() => {
+        try {
+          const bootEl = document.getElementById("boot");
+          const BOOT = bootEl ? JSON.parse(bootEl.textContent || "{}") : {};
+          if (BOOT.ok && BOOT.user) {
+            const u = {
+              email: BOOT.user.email ?? "",
+              username: BOOT.user.username ?? BOOT.user.email ?? "",
+              roles: Array.isArray(BOOT.user.roles) ? BOOT.user.roles : []
+            };
+            localStorage.setItem("dt:user", JSON.stringify(u));
+            document.cookie = "dt_user=; Max-Age=0; Path=/; SameSite=Lax";
+            location.replace(BOOT.next || "/");
+          } else {
+            location.replace("/auth/login?error=sesion_invalida");
+          }
+        } catch {
+          location.replace("/auth/login?error=callback_error");
+        }
+      })();
+    </script>
   </body>
 </html>

@@ -19,12 +19,10 @@ const ok = Astro.url.searchParams.get("ok");
     <div
       class="relative flex items-center justify-center p-8 md:p-12 overflow-hidden"
     >
-      <!-- Asegúrate que esta imagen exista; si no, usa /assets/img/devtalles.jpg -->
       <div
         class="absolute inset-0 bg-[url('/assets/img/devtalles.jpg')] bg-cover bg-center"
         aria-hidden="true"
-      >
-      </div>
+      ></div>
       <div class="absolute inset-0 bg-black/55" aria-hidden="true"></div>
 
       <div class="relative z-10 max-w-md text-center md:text-left">
@@ -69,7 +67,7 @@ const ok = Astro.url.searchParams.get("ok");
           )
         }
 
-        <!-- OJO: action fijo a /api/auth/login y next -> /admin -->
+        <!-- Envia al endpoint del back de la landing -->
         <form class="space-y-5" method="post" action="/api/auth/login">
           <input type="hidden" name="next" value="/admin" />
 
@@ -90,7 +88,6 @@ const ok = Astro.url.searchParams.get("ok");
             required
           />
 
-          <!-- Para descartar problemas del Button personalizado, puedes probar con un <button> nativo -->
           <button
             type="submit"
             class="w-full rounded-lg px-4 py-2 bg-[var(--color-accent)] text-[var(--color-accent-foreground)]"
@@ -136,10 +133,10 @@ const ok = Astro.url.searchParams.get("ok");
         </div>
 
         <p class="mt-6 text-center text-sm text-[var(--color-text)]/70">
-          ¿No tienes cuenta? <a
-            href="/auth/signup"
-            class="text-[var(--color-accent)] hover:underline">Regístrate</a
-          >
+          ¿No tienes cuenta?
+          <a href="/auth/signup" class="text-[var(--color-accent)] hover:underline">
+            Regístrate
+          </a>
         </p>
       </div>
     </div>

@@ -1,9 +1,13 @@
-// src/pages/api/auth/login.ts
 import type { APIRoute } from "astro";
 export const prerender = false;
 
 const clean = (v?: string) => (v ?? "").replace(/\u00A0/g, "").trim();
 const API_BASE = clean(import.meta.env.PUBLIC_API_URL).replace(/\/+$/, "");
+
+// GET defensivo: si alguien abre /api/auth/login en el navegador, lo mandamos al form
+export const GET: APIRoute = async ({ redirect }) => {
+  return redirect("/auth/login", 303);
+};
 
 // lectura robusta de errores del API
 async function readError(res: Response) {
@@ -27,7 +31,6 @@ export const POST: APIRoute = async ({ request, redirect, cookies, url }) => {
     return redirect(`/auth/login?error=${encodeURIComponent("Config faltante: PUBLIC_API_URL")}`, 303);
   }
 
-  // toggle simple para logs verbosos: ?debug=1 o process.env.DEBUG_AUTH
   const debug =
     new URL(request.url).searchParams.get("debug") === "1" ||
     process.env.DEBUG_AUTH === "1";
@@ -46,18 +49,13 @@ export const POST: APIRoute = async ({ request, redirect, cookies, url }) => {
     }
 
     if (debug) {
-      // no logeamos password
       const maskedId =
         identifier.length > 4
           ? identifier.slice(0, 2) + "***" + identifier.slice(-2)
           : "***";
-      console.log("[auth/login] → API request", {
-        API_BASE,
-        identifier: maskedId,
-      });
+      console.log("[auth/login] → API request", { API_BASE, identifier: maskedId });
     }
 
-    // Llamada al API externo
     const resp = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -65,20 +63,16 @@ export const POST: APIRoute = async ({ request, redirect, cookies, url }) => {
       redirect: "manual",
     });
 
-    // Clon para inspección sin consumir el body
     const clone = resp.clone();
     let rawBody = "";
     try { rawBody = await clone.text(); } catch {}
 
-    // LOG de la respuesta del API
     if (debug) {
       const setCookieHeader = resp.headers.get("set-cookie") || "";
-      // enmascara jwt si está
       const maskedSetCookie = setCookieHeader.replace(
         /(jwt=)([^;]+)/i,
         (_m, p1, p2) => p1 + (p2.length > 12 ? p2.slice(0, 12) + "...(redacted)" : "***")
       );
-
       console.log("[auth/login] ← API response", {
         status: resp.status,
         ok: resp.ok,
@@ -93,17 +87,15 @@ export const POST: APIRoute = async ({ request, redirect, cookies, url }) => {
       return redirect(`/auth/login?error=${encodeURIComponent(msg || "Credenciales inválidas")}`, 303);
     }
 
-    // Extrae cookie jwt del API
+    // Copiamos jwt de la respuesta del API a cookie del front
     const setCookie = resp.headers.get("set-cookie") || "";
     const m = setCookie.match(/(?:^|;?\s*)jwt=([^;]+)/i);
     const jwt = m ? decodeURIComponent(m[1]) : "";
-
     if (!jwt) {
       if (debug) console.error("[auth/login] faltó Set-Cookie jwt en respuesta del API");
       return redirect(`/auth/login?error=${encodeURIComponent("No se recibió cookie 'jwt' del API.")}`, 303);
     }
 
-    // Copia la cookie al dominio del front
     cookies.set("jwt", jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -112,7 +104,7 @@ export const POST: APIRoute = async ({ request, redirect, cookies, url }) => {
       maxAge: 60 * 60 * 24 * 7,
     });
 
-    // (Opcional) Intenta parsear el body para {email, username, roles} y dejarlo en cookie temporal dt_user
+    // Cookie temporal NO-HttpOnly con user-lite (si el API devolvió JSON)
     try {
       if (rawBody) {
         const j = JSON.parse(rawBody);
@@ -130,11 +122,11 @@ export const POST: APIRoute = async ({ request, redirect, cookies, url }) => {
         });
         if (debug) console.log("[auth/login] set cookie dt_user (temporal)");
       }
-    } catch (e) {
-      if (debug) console.warn("[auth/login] no se pudo parsear body JSON; seguirá con JWT en callback");
+    } catch {
+      if (debug) console.warn("[auth/login] body no era JSON; se usará JWT en callback");
     }
 
-    // Redirección al callback (ahí se persiste localStorage)
+    // Redirige al callback
     const cb = new URL("/auth/callback", url.origin);
     cb.searchParams.set("next", next);
     if (debug) console.log("[auth/login] redirect →", cb.toString());
