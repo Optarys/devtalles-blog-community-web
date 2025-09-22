@@ -1,31 +1,48 @@
 ---
-const API_BASE = (import.meta.env.PUBLIC_API_URL ?? "").replace(/\/+$/, "");
-
 const url = new URL(Astro.request.url);
 const next = url.searchParams.get("next") ?? "/";
 const debug = url.searchParams.get("debug") === "1";
 
 const token = Astro.cookies.get("jwt")?.value ?? "";
 
-let resStatus: number | null = null;
-let resBody: any = null;
-let user: any = null;
+function b64urlToB64(s: string) {
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
+  const pad = s.length % 4;
+  return pad ? s + "=".repeat(4 - pad) : s;
+}
 
-if (API_BASE && token) {
+let user: { email?: string; username?: string; roles?: string[] } | null = null;
+let resBody: any = null;
+let resStatus: number | null = null;
+
+if (token) {
   try {
-    const r = await fetch(`${API_BASE}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    });
-    resStatus = r.status;
-    const text = await r.text();
-    try { resBody = JSON.parse(text); } catch { resBody = text; }
-    user = (resBody && (resBody.user || resBody)) || null;
+    const parts = token.split(".");
+    if (parts.length >= 2) {
+      const payloadJson = Buffer.from(b64urlToB64(parts[1]), "base64").toString("utf8");
+      const payload = JSON.parse(payloadJson);
+
+      user = {
+        email: payload.email ?? payload.sub ?? "",
+        username:
+          payload.username ??
+          payload.name ??
+          payload.preferred_username ??
+          payload.sub ??
+          "",
+        roles: Array.isArray(payload.roles)
+          ? payload.roles
+          : payload.role
+          ? [payload.role]
+          : [],
+      };
+    }
   } catch (e) {
     resBody = String(e);
   }
 }
 
-const ok = !!user;
+const ok = !!(user && (user.username || user.email));
 ---
 
 <!doctype html>
@@ -36,32 +53,24 @@ const ok = !!user;
       ok ? (
         <>
           <h1>✅ Sesión iniciada</h1>
-          <p>Hola {user.firstName ?? user.username ?? user.email}. Redirigiendo…</p>
+          <p>Hola {user!.username || user!.email}. Redirigiendo…</p>
           <p><a href={next}>Continuar</a></p>
 
           <script type="application/json" id="boot">
-            {JSON.stringify({
-              user: {
-                email: user?.email ?? "",
-                username: user?.username ?? user?.firstName ?? user?.email ?? "",
-                roles: Array.isArray(user?.roles) ? user.roles : []
-              },
-              next
-            })}
+            {JSON.stringify({ user, next })}
           </script>
 
           <script is:inline>
             (() => {
               try {
                 const bootEl = document.getElementById("boot");
-                const BOOT = bootEl ? JSON.parse(bootEl.textContent || "{}") : { user: null, next: "/" };
+                const BOOT = bootEl ? JSON.parse(bootEl.textContent || "{}") : {};
                 if (BOOT?.user) {
                   localStorage.setItem("dt:user", JSON.stringify(BOOT.user));
                 }
-                const dest = typeof BOOT?.next === "string" && BOOT.next ? BOOT.next : "/";
-                setTimeout(() => location.replace(dest), 900);
+                const dest = (typeof BOOT?.next === "string" && BOOT.next) ? BOOT.next : "/";
+                setTimeout(() => location.replace(dest), 500);
               } catch {
-                // si algo falla, vuelve al home
                 location.replace("/");
               }
             })();
@@ -72,16 +81,12 @@ const ok = !!user;
           <h1>⚠️ No hay sesión</h1>
           <ul>
             <li><strong>Tiene cookie jwt:</strong> {String(!!token)}</li>
-            <li><strong>API_BASE:</strong> {API_BASE || "(vacío)"}</li>
-            <li><strong>Respuesta /auth/me:</strong> {resStatus ?? "(sin llamada)"}</li>
           </ul>
-
           {debug && (
             <pre style="white-space:pre-wrap;background:#111;color:#eee;padding:12px;border-radius:8px">
-              {JSON.stringify({ tokenPresent: !!token, resStatus, resBody }, null, 2)}
+{JSON.stringify({ tokenPresent: !!token, resStatus, resBody }, null, 2)}
             </pre>
           )}
-
           <p><a href="/auth/login">Ir a iniciar sesión</a></p>
         </>
       )
