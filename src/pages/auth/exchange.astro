@@ -1,4 +1,9 @@
 ---
+/**
+ * OAuth: llama a /auth/oauth2/exchange (API) para setear cookie jwt y
+ * además lee el JSON {email, username, roles} que devuelve, lo guarda en
+ * cookie NO-HttpOnly temporal `dt_user`, y redirige a /auth/callback.
+ */
 const API_BASE = (import.meta.env.PUBLIC_API_URL ?? "").replace(/\/+$/, "");
 const url = new URL(Astro.request.url);
 const next = url.searchParams.get("next") ?? "/";
@@ -31,6 +36,21 @@ const next = url.searchParams.get("next") ?? "/";
           });
           if (!res.ok) throw new Error("exchange_failed");
 
+          // Lee el JSON y deposítalo en cookie temporal dt_user (no-HttpOnly) para el callback
+          try {
+            const data = await res.json(); // { email, username, roles }
+            const userLite = {
+              email: data?.email ?? "",
+              username: data?.username ?? data?.email ?? "",
+              roles: Array.isArray(data?.roles) ? data.roles : []
+            };
+            const val = btoa(JSON.stringify(userLite));
+            document.cookie = `dt_user=${val}; Max-Age=300; Path=/; SameSite=Lax`;
+          } catch (_) {
+            // si no viene body JSON, no pasa nada. El callback intentará decodificar el JWT.
+          }
+
+          // Redirige al callback, que escribe localStorage
           location.replace(`/auth/callback?next=${encodeURIComponent(NEXT)}`);
         } catch (e) {
           location.replace("/auth/login?error=" + encodeURIComponent(e?.message || "Error en exchange"));
