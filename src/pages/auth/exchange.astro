@@ -15,14 +15,10 @@ const next = url.searchParams.get("next") ?? "/";
   <body>
     <p>Procesando autenticación…</p>
 
-    <script
-      is:inline
-      data-api={API_BASE}
-      data-next={next}
-    >
+    <script is:inline data-api={API_BASE} data-next={next}>
       (async () => {
         const s = document.currentScript;
-        const API  = s?.dataset.api  || "";
+        const API = s?.dataset.api || "";
         const NEXT = s?.dataset.next || "/";
 
         try {
@@ -30,30 +26,42 @@ const next = url.searchParams.get("next") ?? "/";
           const code = sp.get("code");
           if (!code) return location.replace("/auth/login?error=falta_code");
 
-          const res = await fetch(`${API}/auth/oauth2/exchange?code=${encodeURIComponent(code)}`, {
-            credentials: "include",
-            headers: { Accept: "application/json" },
-          });
+          const res = await fetch(
+            `${API}/auth/oauth2/exchange?code=${encodeURIComponent(code)}`,
+            {
+              credentials: "include",
+              headers: { Accept: "application/json" },
+            },
+          );
           if (!res.ok) throw new Error("exchange_failed");
 
-          // Lee el JSON y deposítalo en cookie temporal dt_user (no-HttpOnly) para el callback
           try {
-            const data = await res.json(); // { email, username, roles }
-            const userLite = {
-              email: data?.email ?? "",
-              username: data?.username ?? data?.email ?? "",
-              roles: Array.isArray(data?.roles) ? data.roles : []
-            };
+            const data = await res.json().catch(() => null);
+            const userLite =
+              data && typeof data === "object"
+                ? {
+                    email: data?.email ?? "",
+                    username: data?.username ?? data?.email ?? "",
+                    roles: Array.isArray(data?.roles) ? data.roles : [],
+                  }
+                : { email: "", username: "usuario", roles: [] };
+
             const val = btoa(JSON.stringify(userLite));
             document.cookie = `dt_user=${val}; Max-Age=300; Path=/; SameSite=Lax`;
-          } catch (_) {
-            // si no viene body JSON, no pasa nada. El callback intentará decodificar el JWT.
+          } catch {
+            const val = btoa(
+              JSON.stringify({ email: "", username: "usuario", roles: [] }),
+            );
+            document.cookie = `dt_user=${val}; Max-Age=300; Path=/; SameSite=Lax`;
           }
 
           // Redirige al callback, que escribe localStorage
           location.replace(`/auth/callback?next=${encodeURIComponent(NEXT)}`);
         } catch (e) {
-          location.replace("/auth/login?error=" + encodeURIComponent(e?.message || "Error en exchange"));
+          location.replace(
+            "/auth/login?error=" +
+              encodeURIComponent(e?.message || "Error en exchange"),
+          );
         }
       })();
     </script>

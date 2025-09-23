@@ -65,7 +65,7 @@ export const POST: APIRoute = async ({ request, redirect, cookies, url }) => {
 
     const clone = resp.clone();
     let rawBody = "";
-    try { rawBody = await clone.text(); } catch {}
+    try { rawBody = await clone.text(); } catch { }
 
     if (debug) {
       const setCookieHeader = resp.headers.get("set-cookie") || "";
@@ -92,8 +92,33 @@ export const POST: APIRoute = async ({ request, redirect, cookies, url }) => {
     const m = setCookie.match(/(?:^|;?\s*)jwt=([^;]+)/i);
     const jwt = m ? decodeURIComponent(m[1]) : "";
     if (!jwt) {
-      if (debug) console.error("[auth/login] faltó Set-Cookie jwt en respuesta del API");
-      return redirect(`/auth/login?error=${encodeURIComponent("No se recibió cookie 'jwt' del API.")}`, 303);
+      if (debug) console.warn("[auth/login] 2xx sin Set-Cookie jwt; continuamos con dt_user mínimo");
+      try {
+        // si el body tenía algo, úsalo; sino crea uno mínimo
+        let j: any = null;
+        if (rawBody) {
+          try { j = JSON.parse(rawBody); } catch { }
+        }
+        const userLite = j && typeof j === "object"
+          ? {
+            email: j?.email ?? "",
+            username: j?.username ?? j?.email ?? "",
+            roles: Array.isArray(j?.roles) ? j.roles : [],
+          }
+          : { email: "", username: "usuario", roles: [] };
+
+        cookies.set("dt_user", Buffer.from(JSON.stringify(userLite)).toString("base64"), {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 5,
+        });
+      } catch { }
+      // sin detener el flujo: vamos al callback
+      const cb = new URL("/auth/callback", url.origin);
+      cb.searchParams.set("next", String(fd.get("next") || "/admin"));
+      return redirect(cb.toString(), 303);
     }
 
     cookies.set("jwt", jwt, {

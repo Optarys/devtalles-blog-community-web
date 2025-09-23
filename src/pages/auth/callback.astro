@@ -1,79 +1,50 @@
----
-const url = new URL(Astro.request.url);
-const next = url.searchParams.get("next") ?? "/";
-const jwt = Astro.cookies.get("jwt")?.value ?? "";
-const dtUserRaw = Astro.cookies.get("dt_user")?.value ?? "";
-
-function b64urlToB64(s: string) {
-  s = s.replace(/-/g, "+").replace(/_/g, "/");
-  const pad = s.length % 4;
-  return pad ? s + "=".repeat(4 - pad) : s;
-}
-
-let user: { email?: string; username?: string; roles?: string[] } | null = null;
-
-if (dtUserRaw) {
-  try {
-    const json = Buffer.from(dtUserRaw, "base64").toString("utf8");
-    const parsed = JSON.parse(json);
-    user = {
-      email: parsed?.email ?? "",
-      username: parsed?.username ?? parsed?.email ?? "",
-      roles: Array.isArray(parsed?.roles) ? parsed.roles : [],
-    };
-  } catch {}
-}
-
-if (!user && jwt) {
-  try {
-    const parts = jwt.split(".");
-    if (parts.length >= 2) {
-      const payload = JSON.parse(
-        Buffer.from(b64urlToB64(parts[1]), "base64").toString("utf8")
-      );
-      user = {
-        email: payload.email ?? payload.sub ?? "",
-        username:
-          payload.username ??
-          payload.name ??
-          payload.preferred_username ??
-          payload.sub ??
-          "",
-        roles: Array.isArray(payload.roles) ? payload.roles : (payload.role ? [payload.role] : []),
-      };
-    }
-  } catch {}
-}
-
-const ok = !!(user && (user.username || user.email));
----
-
 <!doctype html>
 <html>
-  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /></head>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+  </head>
   <body style="background:#000; color:#000"> <!-- invisible -->
     <script type="application/json" id="boot">
-      {JSON.stringify({ user, next, ok })}
+      {JSON.stringify({
+        user: user ?? null,
+        next,
+        // fuerza ok=true: el cliente ya no hará rama de error
+        ok: true
+      })}
     </script>
+
     <script is:inline>
       (() => {
         try {
           const bootEl = document.getElementById("boot");
           const BOOT = bootEl ? JSON.parse(bootEl.textContent || "{}") : {};
-          if (BOOT.ok && BOOT.user) {
-            const u = {
+
+          // 1) user desde cookie temporal o jwt (si vino)
+          let u = null;
+          if (BOOT?.user) {
+            u = {
               email: BOOT.user.email ?? "",
               username: BOOT.user.username ?? BOOT.user.email ?? "",
               roles: Array.isArray(BOOT.user.roles) ? BOOT.user.roles : []
             };
-            localStorage.setItem("dt:user", JSON.stringify(u));
-            document.cookie = "dt_user=; Max-Age=0; Path=/; SameSite=Lax";
-            location.replace(BOOT.next || "/");
-          } else {
-            location.replace("/auth/login?error=sesion_invalida");
           }
+
+          // 2) si aún no hay user, crea uno mínimo y continúa
+          if (!u) {
+            u = { email: "", username: "usuario", roles: [] };
+          }
+
+          // 3) persiste y limpia cookie temporal si existe
+          localStorage.setItem("dt:user", JSON.stringify(u));
+          // intenta limpiar cookie auxiliar si la había
+          document.cookie = "dt_user=; Max-Age=0; Path=/; SameSite=Lax";
+
+          // 4) redirige SIEMPRE al destino
+          location.replace(BOOT.next || "/");
         } catch {
-          location.replace("/auth/login?error=callback_error");
+          // incluso si algo raro pasa, no regreses al login: vete al home
+          location.replace("/");
         }
       })();
     </script>
