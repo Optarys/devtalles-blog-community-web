@@ -17,16 +17,22 @@ const { title = "Admin" } = Astro.props;
       <div
         class="mx-auto flex max-w-6xl items-center justify-between px-6 py-3"
       >
-        <a href="/admin/posts" class="font-bold text-[var(--color-title)]">
-          DevTalles · Admin
+        <!-- Logo en lugar del texto -->
+        <a href="/admin/posts" class="flex items-center gap-2">
+          <img
+            src="/assets/png/LOGO B.png"
+            alt="DevTalles Admin"
+            class="h-8 w-auto"
+          />
+          <span class="sr-only">DevTalles Admin</span>
         </a>
+
         <nav class="text-sm">
           <a href="/" class="hover:underline">← Ir al sitio</a>
         </nav>
       </div>
     </header>
 
-    <!-- Contenido -->
     <main class="mx-auto max-w-6xl px-6 py-8">
       <slot />
     </main>
