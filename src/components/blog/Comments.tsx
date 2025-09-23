@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui";
 import { addComment, deleteComment, listCommentsByGraphSlug } from "@/services";
+import toast, { Toaster } from "react-hot-toast";
 
 const LS_USER_KEY = "dt:user";
 const CLIENT_KEY = "dt:clientId";
@@ -11,7 +12,7 @@ function cacheUser(username: string | null) {
   try {
     if (!username) localStorage.removeItem(LS_USER_KEY);
     else localStorage.setItem(LS_USER_KEY, JSON.stringify({ username } as CachedUser));
-  } catch { }
+  } catch {}
 }
 function getCachedUser(): string | null {
   try {
@@ -35,12 +36,15 @@ type Comment = { id: string; name: string; text: string; ts: number; clientId: s
 const KEY = (key: string) => `dt:cmt:${key}`;
 
 function localId() {
-  const r = (crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) + Date.now().toString(36);
+  const r =
+    (crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) +
+    Date.now().toString(36);
   return `local-${r}`;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const minuteDiff = (a: number, b: number) => Math.abs(Math.floor(a / 60000) - Math.floor(b / 60000));
+const minuteDiff = (a: number, b: number) =>
+  Math.abs(Math.floor(a / 60000) - Math.floor(b / 60000));
 
 export default function Comments({ postId, slug, initialComments = [] }: Props) {
   const [clientId, setClientId] = useState("");
@@ -51,6 +55,76 @@ export default function Comments({ postId, slug, initialComments = [] }: Props) 
   const [username, setUsername] = useState<string | null>(null);
 
   const storageKey = KEY(slug ?? String(postId));
+
+  // ---- Helpers de notificación ----
+  const notifyOk = (msg: string) =>
+    toast.success(msg, {
+      duration: 3500,
+      style: {
+        background: "var(--surface-2)",
+        color: "var(--color-text)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        backdropFilter: "blur(8px)",
+      },
+    });
+  const notifyError = (msg: string) =>
+    toast.error(msg, {
+      duration: 4500,
+      style: {
+        background: "var(--surface-2)",
+        color: "var(--color-text)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        backdropFilter: "blur(8px)",
+      },
+    });
+  const notifyInfo = (msg: string) =>
+    toast(msg, {
+      duration: 3000,
+      style: {
+        background: "var(--surface-2)",
+        color: "var(--color-text)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        backdropFilter: "blur(8px)",
+      },
+    });
+
+  // Confirmación con toast (sin window.confirm)
+  function confirmToast(message: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const id = toast.custom(
+        (t) => (
+          <div
+            className="max-w-sm w-full rounded-xl border border-white/10 bg-[var(--surface-2)] text-[var(--color-text)] shadow-xl backdrop-blur p-4"
+            role="alertdialog"
+            aria-modal="true"
+          >
+            <p className="text-sm">{message}</p>
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                className="rounded-md px-3 py-1.5 text-sm font-medium bg-red-500/90 hover:bg-red-500 text-white"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  resolve(true);
+                }}
+              >
+                Eliminar
+              </button>
+              <button
+                className="rounded-md px-3 py-1.5 text-sm font-medium bg-white/10 hover:bg-white/20 text-[var(--color-text)]"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  resolve(false);
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ),
+        { duration: 60000, id: `confirm-${Date.now()}` }
+      );
+    });
+  }
 
   useEffect(() => {
     try {
@@ -65,51 +139,61 @@ export default function Comments({ postId, slug, initialComments = [] }: Props) 
       };
       window.addEventListener("storage", onStorage);
       return () => window.removeEventListener("storage", onStorage);
-    } catch { }
+    } catch {}
   }, []);
 
   useEffect(() => {
-    const server: Comment[] = (initialComments || []).map((c) => ({ ...c, clientId: "" }));
+    const server: Comment[] = (initialComments || []).map((c) => ({
+      ...c,
+      clientId: "",
+    }));
 
     let local: Comment[] = [];
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) local = JSON.parse(raw) as Comment[];
-    } catch { }
+    } catch {}
 
     const serverByText = new Map(server.map((c) => [c.text.trim(), c] as const));
     local = local.filter((c) => {
       if (!c.id.startsWith("local-")) return true;
       const s = serverByText.get(c.text.trim());
-      return !s || minuteDiff(s.ts, c.ts) > 1440;
+      return !s || minuteDiff(s.ts, c.ts) > 1440; // 24h
     });
 
     const onlyOptimisticNotCovered = local.filter(
       (c) => c.id.startsWith("local-") && !serverByText.has(c.text.trim())
     );
 
-    const merged = [...server, ...onlyOptimisticNotCovered].sort((a, b) => b.ts - a.ts);
+    const merged = [...server, ...onlyOptimisticNotCovered].sort(
+      (a, b) => b.ts - a.ts
+    );
     const marked = markMine(merged, username, clientId);
     setComments(marked);
-    try { localStorage.setItem(storageKey, JSON.stringify(marked)); } catch { }
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(marked));
+    } catch {}
   }, [storageKey, initialComments, username, clientId]);
 
   useEffect(() => {
     if (!comments.length) return;
     const marked = markMine(comments, username, clientId);
     if (marked !== comments) setComments(marked);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username, clientId]);
 
   const persist = (next: Comment[]) => {
     setComments(next);
-    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { }
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {}
   };
 
   function markMine(list: Comment[], username: string | null, clientId: string) {
     if (!username || !clientId) return list;
     const u = username.trim().toLowerCase();
     let touched = false;
-    const out = list.map(c => {
+    const out = list.map((c) => {
       const n = (c.name ?? "").trim().toLowerCase();
       if (n && n === u && c.clientId !== clientId) {
         touched = true;
@@ -120,7 +204,10 @@ export default function Comments({ postId, slug, initialComments = [] }: Props) 
     return touched ? out : list;
   }
 
-  async function refreshAndReconcile(optimistic?: Comment, currentLocal: Comment[] = []) {
+  async function refreshAndReconcile(
+    optimistic?: Comment,
+    currentLocal: Comment[] = []
+  ) {
     if (!slug) return;
 
     const tryOnce = async () => {
@@ -143,13 +230,18 @@ export default function Comments({ postId, slug, initialComments = [] }: Props) 
       }
 
       if (optimistic) {
-        const sameText = serverMapped.filter((s) => s.text.trim() === optimistic.text.trim());
+        const sameText = serverMapped.filter(
+          (s) => s.text.trim() === optimistic.text.trim()
+        );
         if (sameText.length) {
           let best = sameText[0];
           let bestDiff = minuteDiff(best.ts, optimistic.ts);
           for (let i = 1; i < sameText.length; i++) {
             const d = minuteDiff(sameText[i].ts, optimistic.ts);
-            if (d < bestDiff) { best = sameText[i]; bestDiff = d; }
+            if (d < bestDiff) {
+              best = sameText[i];
+              bestDiff = d;
+            }
           }
           if (bestDiff <= 5) {
             const idx = serverMapped.findIndex((x) => x.id === best.id);
@@ -164,7 +256,9 @@ export default function Comments({ postId, slug, initialComments = [] }: Props) 
         (c) => c.id.startsWith("local-") && !serverTexts.has(c.text.trim())
       );
 
-      return [...serverMapped, ...onlyOptimisticNotCovered].sort((a, b) => b.ts - a.ts);
+      return [...serverMapped, ...onlyOptimisticNotCovered].sort(
+        (a, b) => b.ts - a.ts
+      );
     };
 
     let merged = await tryOnce();
@@ -181,7 +275,13 @@ export default function Comments({ postId, slug, initialComments = [] }: Props) 
     const t = (text || "").trim();
     if (t.length < 3 || submitting) return;
 
-    const optimistic: Comment = { id: localId(), name: n, text: t, ts: Date.now(), clientId };
+    const optimistic: Comment = {
+      id: localId(),
+      name: n,
+      text: t,
+      ts: Date.now(),
+      clientId,
+    };
     const snapshot = comments;
     const withOptimistic = [optimistic, ...comments].slice(0, 200);
     persist(withOptimistic);
@@ -192,17 +292,23 @@ export default function Comments({ postId, slug, initialComments = [] }: Props) 
       const saved: any = await addComment({ content: t, postId });
 
       const backendName: string | undefined =
-        saved?.author?.name ?? saved?.authorName ?? saved?.author?.username ?? undefined;
+        saved?.author?.name ??
+        saved?.authorName ??
+        saved?.author?.username ??
+        undefined;
 
       if (backendName && backendName.trim()) {
         cacheUser(backendName.trim());
         setUsername(backendName.trim());
       }
 
+      notifyOk("Comentario publicado 🎉");
       await refreshAndReconcile(optimistic, withOptimistic);
     } catch (err) {
       console.error(err);
-      alert((err as Error).message || "No se pudo enviar el comentario");
+      notifyError(
+        (err as Error).message || "No se pudo enviar el comentario"
+      );
       persist(snapshot);
     } finally {
       setSubmitting(false);
@@ -210,28 +316,44 @@ export default function Comments({ postId, slug, initialComments = [] }: Props) 
   };
 
   const canDelete = (c: Comment) =>
-    (username && (c.name ?? "").trim().toLowerCase() === username.trim().toLowerCase()) ||
+    (username &&
+      (c.name ?? "").trim().toLowerCase() === username.trim().toLowerCase()) ||
     c.clientId === clientId;
 
   const del = async (id: string) => {
     const target = comments.find((x) => x.id === id);
     if (!target) return;
-    if (!canDelete(target)) return;
-    if (!confirm("¿Eliminar tu comentario?")) return;
+    if (!canDelete(target)) {
+      notifyInfo("No puedes eliminar este comentario");
+      return;
+    }
+
+    const ok = await confirmToast("¿Eliminar tu comentario?");
+    if (!ok) return;
 
     const snapshot = comments;
     persist(comments.filter((x) => x.id !== id));
 
     try {
       await deleteComment(id);
+      notifyOk("Comentario eliminado ✅");
     } catch (e) {
-      alert((e as Error)?.message || "No se pudo eliminar el comentario");
+      notifyError(
+        (e as Error)?.message || "No se pudo eliminar el comentario"
+      );
       persist(snapshot);
     }
   };
 
-  const sorted = useMemo(() => [...comments].sort((a, b) => b.ts - a.ts), [comments]);
-  const format = (ts: number) => new Date(ts).toLocaleString("es-NI", { dateStyle: "medium", timeStyle: "short" });
+  const sorted = useMemo(
+    () => [...comments].sort((a, b) => b.ts - a.ts),
+    [comments]
+  );
+  const format = (ts: number) =>
+    new Date(ts).toLocaleString("es-NI", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
 
   const Avatar = ({ name }: { name: string }) => {
     const letter = (name?.[0] || "A").toUpperCase();
@@ -244,19 +366,29 @@ export default function Comments({ postId, slug, initialComments = [] }: Props) 
 
   return (
     <section className="rounded-2xl border border-white/10 bg-[var(--surface-2)]/70 p-5 backdrop-blur">
+      {/* Toaster local (puedes moverlo al layout global si prefieres) */}
+      <Toaster position="bottom-right" />
+
       <h2 className="text-lg font-semibold text-[var(--color-title)]">
         Comentarios ({comments.length})
       </h2>
 
       <div className="mt-6 space-y-4">
         {sorted.map((c) => (
-          <div key={`${c.id}-${c.ts}`} className="flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3">
+          <div
+            key={`${c.id}-${c.ts}`}
+            className="flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3"
+          >
             <Avatar name={c.name} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-3">
                 <div className="truncate">
-                  <span className="font-medium text-[var(--color-title)]">{c.name}</span>
-                  <span className="ml-2 text-xs text-[var(--color-text)]/60">{format(c.ts)}</span>
+                  <span className="font-medium text-[var(--color-title)]">
+                    {c.name}
+                  </span>
+                  <span className="ml-2 text-xs text-[var(--color-text)]/60">
+                    {format(c.ts)}
+                  </span>
                 </div>
                 {canDelete(c) && (
                   <Button
@@ -269,13 +401,17 @@ export default function Comments({ postId, slug, initialComments = [] }: Props) 
                   </Button>
                 )}
               </div>
-              <p className="mt-1 whitespace-pre-wrap text-[var(--color-text)]">{c.text}</p>
+              <p className="mt-1 whitespace-pre-wrap text-[var(--color-text)]">
+                {c.text}
+              </p>
             </div>
           </div>
         ))}
 
         {sorted.length === 0 && (
-          <p className="text-center text-[var(--color-text)]/60">Sé el primero en comentar ✍️</p>
+          <p className="text-center text-[var(--color-text)]/60">
+            Sé el primero en comentar ✍️
+          </p>
         )}
       </div>
 
@@ -299,8 +435,15 @@ export default function Comments({ postId, slug, initialComments = [] }: Props) 
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-[var(--color-text)]/60">Sin cuenta. Se guardará en este navegador.</p>
-          <Button type="submit" size="sm" disabled={text.trim().length < 3 || submitting} className="disabled:opacity-50">
+          <p className="text-xs text-[var(--color-text)]/60">
+            Sin cuenta. Se guardará en este navegador.
+          </p>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={text.trim().length < 3 || submitting}
+            className="disabled:opacity-50"
+          >
             {submitting ? "Enviando…" : "Comentar"}
           </Button>
         </div>

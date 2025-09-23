@@ -1,11 +1,16 @@
 ---
 import { AdminLayout } from "@/layouts";
 import { PostForm } from "@/components";
+import { Button } from "@/components/ui";
 import { listCategories } from "@/services";
 
 const categories = await listCategories();
 ---
 
 <AdminLayout title="Nueva publicación">
+  <div class="mb-6">
+    <Button href="/admin/posts" variant="ghost">← Volver</Button>
+  </div>
+
   <PostForm client:load mode="create" categories={categories} />
 </AdminLayout>

@@ -1,8 +1,13 @@
 ---
 import { AdminLayout } from "@/layouts";
 import { PostTable } from "@/components";
+import { Button } from "@/components/ui";
 ---
 
 <AdminLayout title="Publicaciones">
+  <div class="mb-6">
+    <Button href="/admin" variant="ghost">← Volver al panel</Button>
+  </div>
+
   <PostTable client:load />
 </AdminLayout>

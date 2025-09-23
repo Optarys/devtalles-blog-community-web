@@ -13,13 +13,14 @@ import { SiDiscord } from "react-icons/si";
 
 export default function FooterSimple() {
   return (
-    <Footer
-      container
-      className="
-        border-t border-[rgba(17,24,39,0.15)]
-        bg-[var(--color-title)] text-[var(--color-contrast)]
-      "
-    >
+  <Footer
+  container
+  className="
+    border-t border-[rgba(17,24,39,0.15)]
+    bg-[#111827] text-[#F9FAFB]
+  "
+>
+
       <div className="w-full">
         {/* Grid principal */}
         <div className="grid w-full grid-cols-1 gap-8 py-10 md:grid-cols-4">
